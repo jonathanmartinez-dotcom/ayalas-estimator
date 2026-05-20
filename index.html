@@ -138,6 +138,7 @@
   .pw{max-width:100%;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="hdr">
@@ -271,7 +272,7 @@ function saveS(){appS.we=document.getElementById('we').value||'10 years';appS.wi
 function rHome(){
   document.getElementById('hc').textContent=ests.length+' estimate'+(ests.length!==1?'s':'');
   const tabs2=`<div class="tabbar" style="margin-bottom:16px"><button class="tb ${homeTab==='ests'?'on':''}" onclick="homeTab='ests';render()">All Estimates</button><button class="tb ${homeTab==='rpts'?'on':''}" onclick="homeTab='rpts';render()">📊 Reports</button></div>`;if(homeTab==='rpts')return`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Reports</h1></div>`+tabs2+rReports();const sorted=[...ests].sort((a,b)=>b.cr.localeCompare(a.cr));
-  const top=`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Estimates</h1><div class="dr" id="ndr"><button class="btn bp" onclick="tDr()">+ New Estimate ▾</button><div class="dm" id="dmu"><div class="dg">Residential</div><button class="di" onclick="cEst2('ri','dt')">🏠 Interior — Measured</button><button class="di" onclick="cEst2('ri','fr')">🏠 Interior — Flat Rate</button><button class="di" onclick="cEst2('re','dt')">🏡 Exterior — Measured</button><button class="di" onclick="cEst2('re','fr')">🏡 Exterior — Flat Rate</button><div class="dd"></div><div class="dg">Commercial</div><button class="di" onclick="cEst2('ci','dt')">🏢 Interior — Measured</button><button class="di" onclick="cEst2('ci','fr')">🏢 Interior — Flat Rate</button><button class="di" onclick="cEst2('ce','dt')">🏗 Exterior — Measured</button><button class="di" onclick="cEst2('ce','fr')">🏗 Exterior — Flat Rate</button></div></div></div>`;
+  const top=`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Estimates</h1><div style="display:flex;gap:8px"><label class="btn bh" style="cursor:pointer" title="Import from Excel">📥 Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)"></label><div class="dr" id="ndr"><button class="btn bp" onclick="tDr()">+ New Estimate ▾</button><div class="dm" id="dmu"><div class="dg">Residential</div><button class="di" onclick="cEst2('ri','dt')">🏠 Interior — Measured</button><button class="di" onclick="cEst2('ri','fr')">🏠 Interior — Flat Rate</button><button class="di" onclick="cEst2('re','dt')">🏡 Exterior — Measured</button><button class="di" onclick="cEst2('re','fr')">🏡 Exterior — Flat Rate</button><div class="dd"></div><div class="dg">Commercial</div><button class="di" onclick="cEst2('ci','dt')">🏢 Interior — Measured</button><button class="di" onclick="cEst2('ci','fr')">🏢 Interior — Flat Rate</button><button class="di" onclick="cEst2('ce','dt')">🏗 Exterior — Measured</button><button class="di" onclick="cEst2('ce','fr')">🏗 Exterior — Flat Rate</button></div></div></div></div>`;
   if(!sorted.length)return top+tabs2+`<div class="empty"><div style="font-size:44px;margin-bottom:10px">📋</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimates yet</div><div style="margin-top:6px">Create your first estimate above</div></div>`;
   const sc={draft:'b-dr',sent:'b-sn',accepted:'b-ac',declined:'b-dc'};
   return top+tabs2+`<div class="elist">${sorted.map(e=>{const c=cEst(e),ok=c.ag>=e.set.gm;return`<div class="ec" onclick="goEd('${e.id}')"><div><div style="font-weight:700;font-size:14px">${esc(e.cl.n)||'(No Client)'}</div><div style="font-size:11px;color:var(--mu);display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap"><span class="bdg ${sc[e.st]||'b-dr'}">${e.st}</span><span class="bdg ${JT[e.jt]?.b||'b-ri'}">${JT[e.jt]?.s}</span><span class="pl ${e.md==='fr'?'pl-f':'pl-d'}">${e.md==='fr'?'Flat Rate':'Measured'}</span>${e.pn?`<span>${esc(e.pn)}</span>`:''}<span>${fdt(e.cr)}</span>${e.cl.a?`<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.cl.a)}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:14px"><div style="text-align:right"><div style="font-size:17px;font-weight:700;color:var(--nv)">${f$(c.sl)}</div><div class="mono ${ok?'ok':'no'}" style="font-size:11px">${pct(c.ag)} GM</div></div><button class="btn bh sm" onclick="event.stopPropagation();dEst('${e.id}')">Delete</button></div></div>`;}).join('')}</div>`;
@@ -596,8 +597,134 @@ async function deleteFromStorage(url){
 }
 function imgSrc(p){return p.url||p.data||'';}
 
+
+// ── EXCEL IMPORT ──────────────────────────────────────────────────
+let impRows=[], impDups=new Set();
+
+function handleImportFile(inp){
+  if(!inp.files[0])return;
+  document.getElementById('imp-modal').style.display='block';
+  document.getElementById('imp-body').innerHTML='<div style="text-align:center;padding:40px;color:#6B7280"><div style="font-size:28px;margin-bottom:10px">⏳</div>Parsing file…</div>';
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      const ws=wb.Sheets['Estimates 2026']||wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,cellDates:true,raw:true,defval:null});
+      // Find header row (has 'Proposal #')
+      let hIdx=rows.findIndex(r=>r&&r[0]&&String(r[0]).includes('Proposal'));
+      if(hIdx<0)hIdx=3;
+      const data=rows.slice(hIdx+1).filter(r=>r&&r[0]&&String(r[0]).trim()&&!String(r[0]).startsWith('='));
+      impRows=data.map(r=>xlRowToEst(r));
+      // Check duplicates against existing estimates
+      impDups=new Set(ests.map(e=>e.pn).filter(Boolean));
+      showImportPreview();
+    }catch(err){
+      document.getElementById('imp-body').innerHTML='<div style="text-align:center;padding:40px;color:#DC2626"><div style="font-size:28px;margin-bottom:10px">⚠️</div><strong>Failed to parse file</strong><br><span style="font-size:13px">'+err.message+'</span></div>';
+    }
+  };
+  reader.readAsArrayBuffer(inp.files[0]);
+  inp.value='';
+}
+
+function closeImport(){document.getElementById('imp-modal').style.display='none';impRows=[];}
+
+function mapJT(s){s=(s||'').toLowerCase();if(s.includes('residential')&&s.includes('interior'))return'ri';if(s.includes('residential')&&s.includes('exterior'))return're';if(s.includes('commercial')&&s.includes('interior'))return'ci';if(s.includes('commercial')&&(s.includes('exterior')||s.includes('specialty')))return'ce';if(s.includes('residential'))return'ri';return'ci';}
+
+function mapSt(s){s=(s||'').toLowerCase();if(s.includes('won'))return'accepted';if(s.includes('lost')||s.includes('withdrawn'))return'declined';if(s.includes('sent')||s.includes('negotiation')||s.includes('follow')||s.includes('hold'))return'sent';return'draft';}
+
+function parseContact(s){if(!s)return{e:'',p:''};s=String(s);const em=(s.match(/[\w.+-]+@[\w.-]+\.\w{2,}/g)||[])[0]||'';const ph=em?'':(s.match(/[\d]{3}[\s.\-]?[\d]{3}[\s.\-]?[\d]{4}/)||[s.replace(/[^0-9+]/g,'')])[0]||'';return{e:em,p:ph};}
+
+function xlRowToEst(r){
+  const [pn,ds,cn,addr,contact,jt,scope,amt,paint,status,followUp,nextAction,wonAmt,notes]=r;
+  const e=mkE(mapJT(jt),'fr');
+  e.pn=String(pn||'').trim();
+  e.cr=ds instanceof Date?ds.toISOString().slice(0,10):ds?String(ds).slice(0,10):td();
+  const ct=parseContact(contact);
+  e.cl={n:String(cn||'').trim(),a:String(addr||'').trim(),p:ct.p,e:ct.e};
+  e.st=mapSt(String(status||''));
+  const amount=typeof amt==='number'?amt:parseFloat(String(amt||'').replace(/[^0-9.]/g,''))||0;
+  e.li=[{id:uid(),desc:String(scope||'Painting services').trim()||'Painting services',price:String(amount)}];
+  if(paint&&String(paint).toLowerCase().includes('sherwin'))e.ps='sw';
+  const noteParts=[];
+  if(notes)noteParts.push(String(notes));
+  if(followUp)noteParts.push('Last follow-up: '+followUp);
+  if(nextAction)noteParts.push('Next action: '+nextAction);
+  if(noteParts.length)e.sn=noteParts.join('\n');
+  const wAmt=typeof wonAmt==='number'?wonAmt:parseFloat(String(wonAmt||'').replace(/[^0-9.]/g,''))||0;
+  if(e.st==='accepted'&&wAmt>0)e.act={lPaid:'',mPaid:'',nt:'Won amount from tracker: $'+wAmt.toLocaleString()};
+  return e;
+}
+
+function showImportPreview(){
+  const newRows=impRows.filter(e=>!impDups.has(e.pn));
+  const dupRows=impRows.filter(e=>impDups.has(e.pn));
+  const stBadge={draft:'b-dr',sent:'b-sn',accepted:'b-ac',declined:'b-re'};
+  const stLabel={draft:'Draft',sent:'Sent',accepted:'Won',declined:'Lost'};
+  const rows=impRows.map(e=>{
+    const isDup=impDups.has(e.pn);
+    const amt=n0(e.li&&e.li[0]&&e.li[0].price||0);
+    return`<tr style="background:${isDup?'#FFFBEB':'white'}"><td><span style="font-size:11px;font-weight:600;color:#4B5563">${esc(e.pn)}</span></td><td>${esc(e.cl.n)}</td><td><span style="font-size:11px">${JT[e.jt]?.s||e.jt}</span></td><td class="r" style="font-family:'DM Mono',monospace;font-size:13px">${f$(amt)}</td><td><span class="bdg ${stBadge[e.st]||'b-dr'}">${stLabel[e.st]||e.st}</span></td><td style="font-size:11px;color:${isDup?'#92400E':'#6B7280'}">${isDup?'⚠ Duplicate':'✓ New'}</td></tr>`;
+  }).join('');
+  document.getElementById('imp-body').innerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div style="flex:1;background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:#15803D">${newRows.length}</div><div style="font-size:12px;color:#166534">New estimates</div></div>
+      <div style="flex:1;background:${dupRows.length?'#FFFBEB':'#F9FAFB'};border:1px solid ${dupRows.length?'#FCD34D':'#E5E7EB'};border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:${dupRows.length?'#92400E':'#9CA3AF'}">${dupRows.length}</div><div style="font-size:12px;color:${dupRows.length?'#92400E':'#9CA3AF'}">Duplicates</div></div>
+      <div style="flex:1;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:700;color:#1B2A4A">${impRows.length}</div><div style="font-size:12px;color:#6B7280">Total rows</div></div>
+    </div>
+    <div style="max-height:300px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead style="position:sticky;top:0;background:#F9FAFB"><tr style="border-bottom:2px solid #E5E7EB">${['Proposal #','Client','Type','Amount','Status','Action'].map(h=>`<th style="padding:8px 10px;text-align:left;font-weight:600;font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px">${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${dupRows.length?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px"><strong>⚠ ${dupRows.length} duplicate proposal number${dupRows.length>1?'s':''} found.</strong> Choose how to handle them below.</div>`:''}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      <button onclick="closeImport()" style="padding:10px 18px;background:#F3F4F6;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      ${dupRows.length?`<button onclick="runImport('skip')" style="padding:10px 18px;background:#F59E0B;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;color:white">Import New Only (${newRows.length})</button>`:''}
+      <button onclick="runImport('${dupRows.length?'overwrite':'all'}')" style="padding:10px 18px;background:#1B2A4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;color:white">${dupRows.length?'Import All + Overwrite Duplicates':'Import All ('+impRows.length+')'}</button>
+    </div>`;
+}
+
+async function runImport(mode){
+  const toImport=mode==='skip'?impRows.filter(e=>!impDups.has(e.pn)):impRows;
+  document.getElementById('imp-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:28px;margin-bottom:12px">⏳</div><div style="font-weight:600;margin-bottom:10px">Importing ${toImport.length} estimates…</div><div style="background:#E5E7EB;border-radius:99px;height:8px;overflow:hidden"><div id="imp-bar" style="background:#1B2A4A;height:100%;width:0%;border-radius:99px;transition:width .3s"></div></div><div id="imp-prog" style="margin-top:8px;font-size:13px;color:#6B7280">0 / ${toImport.length}</div></div>`;
+  let done=0,errors=0;
+  for(const e of toImport){
+    try{
+      // Remove from existing if overwriting
+      if(mode==='overwrite'||mode==='all'){ests=ests.filter(x=>x.pn!==e.pn||!e.pn);}
+      ests.push(e);
+      await fetch(SURL+'/rest/v1/estimates',{method:'POST',headers:{...SH,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:e.id,data:e,updated_at:new Date().toISOString()})});
+      done++;
+    }catch(err){errors++;}
+    const pct=Math.round((done+errors)/toImport.length*100);
+    const bar=document.getElementById('imp-bar');const prog=document.getElementById('imp-prog');
+    if(bar)bar.style.width=pct+'%';
+    if(prog)prog.textContent=`${done+errors} / ${toImport.length}`;
+  }
+  document.getElementById('imp-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:40px;margin-bottom:12px">${errors?'⚠️':'✅'}</div><div style="font-size:18px;font-weight:700;color:#1B2A4A;margin-bottom:8px">${errors?'Import complete with errors':'Import complete!'}</div><div style="font-size:14px;color:#6B7280;margin-bottom:20px">${done} estimate${done!==1?'s':''} imported successfully${errors?' · '+errors+' failed':''}</div><button onclick="closeImport();render();" style="padding:10px 24px;background:#1B2A4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;color:white">Done → View Estimates</button></div>`;
+}
+
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
 ldData();
 </script>
+
+<div id="imp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;overflow-y:auto;padding:20px">
+  <div style="background:white;border-radius:14px;max-width:860px;margin:0 auto;padding:28px;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div><div style="font-size:19px;font-weight:700;color:#1B2A4A">Import from Excel</div>
+      <div style="font-size:12px;color:#6B7280;margin-top:3px">Maps your estimate tracker to the app automatically</div></div>
+      <button onclick="closeImport()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9CA3AF;padding:4px">&times;</button>
+    </div>
+    <div id="imp-body">
+      <div style="border:2px dashed #D1D5DB;border-radius:10px;padding:40px;text-align:center;color:#6B7280">
+        <div style="font-size:36px;margin-bottom:10px">📊</div>
+        <div style="font-weight:600;margin-bottom:6px">Select your Excel estimate tracker</div>
+        <div style="font-size:13px">Supports .xlsx files · Reads "Estimates 2026" sheet</div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
