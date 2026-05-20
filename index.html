@@ -272,10 +272,39 @@ function saveS(){appS.we=document.getElementById('we').value||'10 years';appS.wi
 function rHome(){
   document.getElementById('hc').textContent=ests.length+' estimate'+(ests.length!==1?'s':'');
   const tabs2=`<div class="tabbar" style="margin-bottom:16px"><button class="tb ${homeTab==='ests'?'on':''}" onclick="homeTab='ests';render()">All Estimates</button><button class="tb ${homeTab==='rpts'?'on':''}" onclick="homeTab='rpts';render()">📊 Reports</button></div>`;if(homeTab==='rpts')return`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Reports</h1></div>`+tabs2+rReports();const sorted=[...ests].sort((a,b)=>b.cr.localeCompare(a.cr));
+  const nAF=(filt.st!=='all'?1:0)+(filt.jt!=='all'?1:0)+(filt.rng!=='all'?1:0)+(filt.q?1:0);
+  const filtBar=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <input class="fi" style="width:190px;padding:7px 10px;font-size:13px" placeholder="🔍 Name, address, #..." value="${esc(filt.q)}" oninput="filt.q=this.value;render()">
+    <select class="fs" style="padding:7px 10px;font-size:13px" onchange="filt.st=this.value;render()">
+      <option value="all" ${filt.st==='all'?'selected':''}>All Status</option>
+      <option value="draft" ${filt.st==='draft'?'selected':''}>Draft</option>
+      <option value="sent" ${filt.st==='sent'?'selected':''}>Sent</option>
+      <option value="accepted" ${filt.st==='accepted'?'selected':''}>Won</option>
+      <option value="declined" ${filt.st==='declined'?'selected':''}>Lost</option>
+    </select>
+    <select class="fs" style="padding:7px 10px;font-size:13px" onchange="filt.jt=this.value;render()">
+      <option value="all" ${filt.jt==='all'?'selected':''}>All Job Types</option>
+      <option value="ri" ${filt.jt==='ri'?'selected':''}>Res. Interior</option>
+      <option value="re" ${filt.jt==='re'?'selected':''}>Res. Exterior</option>
+      <option value="ci" ${filt.jt==='ci'?'selected':''}>Com. Interior</option>
+      <option value="ce" ${filt.jt==='ce'?'selected':''}>Com. Exterior</option>
+    </select>
+    <select class="fs" style="padding:7px 10px;font-size:13px" onchange="filt.rng=this.value;render()">
+      <option value="all" ${filt.rng==='all'?'selected':''}>All Time</option>
+      <option value="week" ${filt.rng==='week'?'selected':''}>This Week</option>
+      <option value="month" ${filt.rng==='month'?'selected':''}>This Month</option>
+      <option value="30" ${filt.rng==='30'?'selected':''}>Last 30 Days</option>
+      <option value="90" ${filt.rng==='90'?'selected':''}>Last 90 Days</option>
+    </select>
+    ${nAF>0?`<button class="btn bd2 sm" onclick="clearFilt()">✕ Clear (${nAF})</button>`:''}
+    ${nAF>0?`<span style="font-size:12px;color:var(--mu)">${applyFilt(sorted).length} of ${sorted.length}</span>`:''}
+  </div>`;
   const top=`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Estimates</h1><div style="display:flex;gap:8px"><label class="btn bh" style="cursor:pointer" title="Import from Excel">📥 Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)"></label><div class="dr" id="ndr"><button class="btn bp" onclick="tDr()">+ New Estimate ▾</button><div class="dm" id="dmu"><div class="dg">Residential</div><button class="di" onclick="cEst2('ri','dt')">🏠 Interior — Measured</button><button class="di" onclick="cEst2('ri','fr')">🏠 Interior — Flat Rate</button><button class="di" onclick="cEst2('re','dt')">🏡 Exterior — Measured</button><button class="di" onclick="cEst2('re','fr')">🏡 Exterior — Flat Rate</button><div class="dd"></div><div class="dg">Commercial</div><button class="di" onclick="cEst2('ci','dt')">🏢 Interior — Measured</button><button class="di" onclick="cEst2('ci','fr')">🏢 Interior — Flat Rate</button><button class="di" onclick="cEst2('ce','dt')">🏗 Exterior — Measured</button><button class="di" onclick="cEst2('ce','fr')">🏗 Exterior — Flat Rate</button></div></div></div></div>`;
-  if(!sorted.length)return top+tabs2+`<div class="empty"><div style="font-size:44px;margin-bottom:10px">📋</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimates yet</div><div style="margin-top:6px">Create your first estimate above</div></div>`;
+  const filtd=applyFilt(sorted);
+  if(!sorted.length)return top+tabs2+filtBar+`<div class="empty"><div style="font-size:44px;margin-bottom:10px">📋</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimates yet</div><div style="margin-top:6px">Create your first estimate above</div></div>`;
+  if(!filtd.length)return top+tabs2+filtBar+`<div class="empty"><div style="font-size:32px;margin-bottom:10px">🔍</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimates match filters</div><div style="margin-top:6px"><button class="btn bh sm" onclick="clearFilt()">Clear filters</button></div></div>`;
   const sc={draft:'b-dr',sent:'b-sn',accepted:'b-ac',declined:'b-dc'};
-  return top+tabs2+`<div class="elist">${sorted.map(e=>{const c=cEst(e),ok=c.ag>=e.set.gm;return`<div class="ec" onclick="goEd('${e.id}')"><div><div style="font-weight:700;font-size:14px">${esc(e.cl.n)||'(No Client)'}</div><div style="font-size:11px;color:var(--mu);display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap"><span class="bdg ${sc[e.st]||'b-dr'}">${e.st}</span><span class="bdg ${JT[e.jt]?.b||'b-ri'}">${JT[e.jt]?.s}</span><span class="pl ${e.md==='fr'?'pl-f':'pl-d'}">${e.md==='fr'?'Flat Rate':'Measured'}</span>${e.pn?`<span>${esc(e.pn)}</span>`:''}<span>${fdt(e.cr)}</span>${e.cl.a?`<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.cl.a)}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:14px"><div style="text-align:right"><div style="font-size:17px;font-weight:700;color:var(--nv)">${f$(c.sl)}</div><div class="mono ${ok?'ok':'no'}" style="font-size:11px">${pct(c.ag)} GM</div></div><button class="btn bh sm" onclick="event.stopPropagation();dEst('${e.id}')">Delete</button></div></div>`;}).join('')}</div>`;
+  return top+tabs2+filtBar+`<div class="elist">${filtd.map(e=>{const c=cEst(e),ok=c.ag>=e.set.gm;return`<div class="ec" onclick="goEd('${e.id}')"><div><div style="font-weight:700;font-size:14px">${esc(e.cl.n)||'(No Client)'}</div><div style="font-size:11px;color:var(--mu);display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap"><span class="bdg ${sc[e.st]||'b-dr'}">${e.st}</span><span class="bdg ${JT[e.jt]?.b||'b-ri'}">${JT[e.jt]?.s}</span><span class="pl ${e.md==='fr'?'pl-f':'pl-d'}">${e.md==='fr'?'Flat Rate':'Measured'}</span>${e.pn?`<span>${esc(e.pn)}</span>`:''}<span>${fdt(e.cr)}</span>${e.cl.a?`<span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.cl.a)}</span>`:''}</div></div><div style="display:flex;align-items:center;gap:14px"><div style="text-align:right"><div style="font-size:17px;font-weight:700;color:var(--nv)">${f$(c.sl)}</div><div class="mono ${ok?'ok':'no'}" style="font-size:11px">${pct(c.ag)} GM</div></div><button class="btn bh sm" onclick="event.stopPropagation();dEst('${e.id}')">Delete</button></div></div>`;}).join('')}</div>`;
 }
 function rTB(e){const c=cEst(e),ok=c.ag>=e.set.gm;return`<div class="fb np" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><div style="display:flex;align-items:center;gap:10px"><button class="btn bh sm" onclick="goHome()">← All</button><span style="color:var(--bd)">|</span><div><div style="font-weight:700;font-size:15px">${esc(e.cl.n)||'New Estimate'}</div><div style="font-size:11px;color:var(--mu)">${JT[e.jt].l} · <span class="pl ${e.md==='fr'?'pl-f':'pl-d'}">${e.md==='fr'?'Flat Rate':'Measured'}</span>${e.pn?' · '+esc(e.pn):''}</div></div></div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div id="lp2" style="font-size:17px;font-weight:700;color:var(--nv)">${f$(c.sl)}</div><div id="lgm" class="mono ${ok?'ok':'no'}" style="font-size:11px">${pct(c.ag)} GM</div></div><button class="btn bg" onclick="goPr()">View Proposal →</button></div></div>`;}
 function rCL(e){const j=JT[e.jt];const to=Object.entries(JT).map(([v,j])=>`<option value="${v}" ${e.jt===v?'selected':''}>${j.l}</option>`).join('');return`<div class="sy"><div class="card"><div class="ct">Estimate Mode <div class="ctl"></div></div><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div class="mt"><button class="mb ${e.md==='dt'?'on':''}" onclick="setMode('dt')">📐 Measured (sqft-based)</button><button class="mb ${e.md==='fr'?'on':''}" onclick="setMode('fr')">💲 Flat Rate (freeform)</button></div><div style="font-size:12px;color:var(--mu)">${e.md==='dt'?'Enter measurements — system calculates pricing.':'Enter your price — system back-calculates cost breakdown.'}</div></div></div><div class="card"><div class="ct">Client Information <div class="ctl"></div></div><div class="g2"><div class="fg"><label class="fl">Client / Company Name</label><input class="fi" value="${esc(e.cl.n)}" placeholder="Smith Family / ABC Corp" oninput="uCl('n',this.value)"></div><div class="fg"><label class="fl">Project Address</label><input class="fi" value="${esc(e.cl.a)}" placeholder="123 Main St, Denver, CO" oninput="uCl('a',this.value)"></div><div class="fg"><label class="fl">Phone</label><input class="fi" value="${esc(e.cl.p)}" placeholder="(720) 555-0000" oninput="uCl('p',this.value)"></div><div class="fg"><label class="fl">Email</label><input class="fi" value="${esc(e.cl.e)}" placeholder="email@example.com" oninput="uCl('e',this.value)"></div></div></div><div class="card"><div class="ct">Proposal Details <div class="ctl"></div></div><div class="g2"><div class="fg"><label class="fl">Job Type</label><select class="fs" onchange="uJT(this.value)">${to}</select></div><div class="fg"><label class="fl">Proposal #</label><input class="fi" value="${esc(e.pn)}" placeholder="${j.px}001" oninput="uF('pn',this.value)"></div><div class="fg"><label class="fl">Date Issued</label><input class="fi" type="date" value="${e.di}" oninput="uF('di',this.value)"></div><div class="fg"><label class="fl">Valid Until</label><input class="fi" type="date" value="${e.vu}" oninput="uF('vu',this.value)"></div><div class="fg"><label class="fl">Start Date</label><input class="fi" type="date" value="${e.sd}" oninput="uF('sd',this.value)"></div><div class="fg"><label class="fl">Duration (days)</label><input class="fi" type="number" value="${e.dur}" oninput="uF('dur',this.value)"></div><div class="fg"><label class="fl">Status</label><select class="fs" onchange="uF('st',this.value)">${['draft','sent','accepted','declined'].map(s=>`<option value="${s}" ${e.st===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></div></div></div><div class="card"><div class="ct">Notes & Add-Ons <div class="ctl"></div></div><div class="g2"><div class="fg"><label class="fl">Scope Notes (in proposal)</label><textarea class="fta" oninput="uF('nt',this.value)">${esc(e.nt||'')}</textarea></div><div class="fg"><label class="fl">Optional Add-Ons (in proposal)</label><textarea class="fta" placeholder="Epoxy floors: $X,XXX | Cabinet painting: $X,XXX" oninput="uF('aO',this.value)">${esc(e.aO||'')}</textarea></div></div></div></div>`;}
@@ -364,7 +393,7 @@ function frcUpd(){const e=getCur();if(!e)return;const c=cFR(e);const bd=document
 function rPr2Lv(e,c){const ok=c.ag>=e.set.gm;return `<div class="ct">Live Pricing <div class="ctl"></div></div><div class="ph3"><div class="ph ph-s"><div class="phv" style="color:var(--tx)">${fd(c.tc)}</div><div class="phl">Total Cost</div><div style="font-size:11px;color:var(--mu);margin-top:4px">${fd(c.mt)} mat · ${fd(c.lb)} labor</div></div><div class="ph ph-m"><div class="phv">${f$(c.sl)}</div><div class="phl">Client Price</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">at ${e.set.gm}% GM</div></div><div class="ph ph-s"><div class="phv" style="color:${ok?'var(--gn)':'var(--rd)'}">${pct(c.ag)}</div><div class="phl">Actual GM</div><div style="font-size:11px;margin-top:4px;color:${ok?'var(--gn)':'var(--rd)'}">${ok?'✅ On target':'⚠️ Below target'}</div></div></div><div class="dv"></div><div class="fb" style="font-size:13px"><span style="color:var(--mu)">50% Deposit at Signing</span><span class="mono" style="font-weight:700">${f$(c.sl*.5)}</span></div><div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">50% Balance at Completion</span><span class="mono" style="font-weight:700">${f$(c.sl*.5)}</span></div>`;}
 function lu(){const e=getCur();if(!e||view!=='editor')return;const c=cEst(e),ok=c.ag>=e.set.gm;const lp=document.getElementById('lp2'),lg=document.getElementById('lgm');if(lp)lp.textContent=f$(c.sl);if(lg){lg.textContent=pct(c.ag)+' GM';lg.className='mono '+(ok?'ok':'no');lg.style.fontSize='11px';}document.getElementById('hc').textContent=ests.length+' estimate'+(ests.length!==1?'s':'');if(ctab==='sm')render();else if(ctab==='fr'){safeUpd('fr-tot',rFRTot(e,c));safeUpd('fr-bd',rFRBd(e,c));}else if(ctab==='pr2'){safeUpd('pr2-lv',rPr2Lv(e,c));}}
 
-let section='est',homeTab='ests';
+let section='est',homeTab='ests',filt={st:'all',jt:'all',rng:'all',q:''};
 let tmJobs=[],tmCurId=null,tmTab='info',tmView='list',tmSvTmr=null,tmInvId=null,tmInvMode='list',tmNewInvType='tm',tmNewInv={},tmNewSel={te:[],me:[]};
 function mkTMJob(){const d=td();return{id:uid(),cr:d,st:'active',cl:{n:'',a:'',p:'',e:''},jn:'',desc:'',linkedEst:'',lMkup:0,mMkup:15,te:[],me:[],invoices:[],notes:[],act:{lPaid:'',mPaid:'',nt:''}};}
 function mkTE(){return{id:uid(),dt:td(),emp:'',hrs:'',rate:'',desc:''};} 
@@ -398,36 +427,81 @@ function uTMNote(i,v){const j=getTMCur();if(!j)return;j.notes=j.notes.map((n,idx
 function uAct(k,v){const e=getCur();if(!e)return;if(!e.act)e.act={lPaid:'',mPaid:'',nt:''};e.act[k]=v;sv();}
 
 function rReports(){
-  if(!ests.length)return'<div class="empty"><div style="font-size:44px;margin-bottom:10px">📊</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimate data yet</div><div style="margin-top:6px">Create and close some estimates to see reporting here.</div></div>';
-  const won=ests.filter(e=>e.st==='accepted'),lost=ests.filter(e=>e.st==='declined'),pipe=ests.filter(e=>e.st==='draft'||e.st==='sent');
-  const tProp=ests.reduce((s,e)=>s+cEst(e).sl,0),tWon=won.reduce((s,e)=>s+cEst(e).sl,0),tPipe=pipe.reduce((s,e)=>s+cEst(e).sl,0);
-  const wRate=(won.length+lost.length)>0?(won.length/(won.length+lost.length))*100:0;
-  const avgDeal=won.length?tWon/won.length:0,avgGM=won.length?won.reduce((s,e)=>s+cEst(e).ag,0)/won.length:0;
-  const now=new Date(),months=[];
-  for(let i=5;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);const key=dt.toISOString().slice(0,7);const lbl=dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});const mE=ests.filter(e=>e.cr.slice(0,7)===key);const mW=mE.filter(e=>e.st==='accepted');months.push({lbl,prop:mE.reduce((s,e)=>s+cEst(e).sl,0),won:mW.reduce((s,e)=>s+cEst(e).sl,0),cnt:mE.length,wCnt:mW.length});}
-  const maxProp=Math.max(...months.map(m=>m.prop),1);
-  const byType=Object.entries(JT).map(([k,j])=>{const te=ests.filter(e=>e.jt===k),tw=te.filter(e=>e.st==='accepted');return{k,s:j.s,b:j.b,cnt:te.length,wCnt:tw.length,val:tw.reduce((s,e)=>s+cEst(e).sl,0)};}).filter(t=>t.cnt>0);
+  if(!ests.length)return'<div class="empty"><div style="font-size:44px;margin-bottom:10px">📊</div><div style="font-size:16px;font-weight:600;color:var(--nv)">No estimate data yet</div><div style="margin-top:6px">Create and close some estimates to see reporting.</div></div>';
+  const now=new Date();
+  const won=ests.filter(e=>e.st==='accepted'),lost=ests.filter(e=>e.st==='declined'),sent=ests.filter(e=>e.st==='sent'),draft=ests.filter(e=>e.st==='draft'),pipe=ests.filter(e=>e.st==='sent'||e.st==='draft');
+  const tAll=ests.reduce((s,e)=>s+cEst(e).sl,0),tWon=won.reduce((s,e)=>s+cEst(e).sl,0),tLost=lost.reduce((s,e)=>s+cEst(e).sl,0),tPipe=pipe.reduce((s,e)=>s+cEst(e).sl,0);
+  const decided=won.length+lost.length;
+  const winRate=ests.length>0?(won.length/ests.length)*100:0;
+  const closeRate=decided>0?(won.length/decided)*100:0;
+  const avgDeal=won.length>0?tWon/won.length:0;
+  const avgGM=won.length>0?won.reduce((s,e)=>s+cEst(e).ag,0)/won.length:0;
+
+  // ── Weekly deal flow (last 12 weeks) ──
+  const weeks=[];
+  for(let i=11;i>=0;i--){
+    const ws=new Date(now);ws.setDate(now.getDate()-i*7-now.getDay());ws.setHours(0,0,0,0);
+    const we=new Date(ws);we.setDate(ws.getDate()+7);
+    const lbl=ws.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const wE=ests.filter(e=>{const d=new Date(e.cr);return d>=ws&&d<we;});
+    weeks.push({lbl,sent:wE.length,won:wE.filter(e=>e.st==='accepted').length,sentAmt:wE.reduce((s,e)=>s+cEst(e).sl,0),wonAmt:wE.filter(e=>e.st==='accepted').reduce((s,e)=>s+cEst(e).sl,0)});
+  }
+  const maxW=Math.max(...weeks.map(w=>w.sent),1);
+
+  // ── Monthly trend (last 6 months) ──
+  const months=[];
+  for(let i=5;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);const key=dt.toISOString().slice(0,7);const lbl=dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});const mE=ests.filter(e=>e.cr.slice(0,7)===key),mW=mE.filter(e=>e.st==='accepted'),mL=mE.filter(e=>e.st==='declined');months.push({key,lbl,cnt:mE.length,wCnt:mW.length,lCnt:mL.length,prop:mE.reduce((s,e)=>s+cEst(e).sl,0),wonAmt:mW.reduce((s,e)=>s+cEst(e).sl,0)});}
+  const maxM=Math.max(...months.map(m=>m.cnt),1);
+
+  // ── By job type ──
+  const byType=Object.entries(JT).map(([k,j])=>{const te=ests.filter(e=>e.jt===k),tw=te.filter(e=>e.st==='accepted');return{k,s:j.s,b:j.b,cnt:te.length,wCnt:tw.length,val:tw.reduce((s,e)=>s+cEst(e).sl,0)};}).filter(t=>t.cnt>0).sort((a,b)=>b.val-a.val);
+  const maxType=Math.max(...byType.map(t=>t.val),1);
+
+  // ── Budget vs actual ──
   const withAct=won.filter(e=>e.act&&(n0(e.act.lPaid)+n0(e.act.mPaid))>0);
-  const actRows=withAct.map(e=>{
-    const c=cEst(e);const bL=c.lb||0,bM=c.mt||0,aL=n0(e.act.lPaid),aM=n0(e.act.mPaid);
-    const lV=aL-bL,mV=aM-bM,tV=(aL+aM)-(bL+bM);
-    const vc=tV>0?'var(--rd)':'var(--gn)';
-    return`<tr><td><strong>${esc(e.cl.n||'—')}</strong><div style="font-size:11px;color:var(--mu)">${JT[e.jt]?.s} · ${esc(e.pn||'—')}</div></td><td class="r">${fd(bL)}</td><td class="r">${fd(aL)}</td><td class="r" style="color:${lV>0?'var(--rd)':'var(--gn)'};font-weight:600">${lV>0?'+':''}${fd(lV)}</td><td class="r">${fd(bM)}</td><td class="r">${fd(aM)}</td><td class="r" style="color:${mV>0?'var(--rd)':'var(--gn)'};font-weight:600">${mV>0?'+':''}${fd(mV)}</td><td class="r" style="font-weight:700;color:${vc}">${tV>0?'Over ':'Under '}${fd(Math.abs(tV))}</td></tr>`;
-  }).join('');
+  const actRows=withAct.map(e=>{const c=cEst(e),bL=c.lb||0,bM=c.mt||0,aL=n0(e.act.lPaid),aM=n0(e.act.mPaid),tV=(aL+aM)-(bL+bM),bT=bL+bM;return`<tr><td><strong>${esc(e.cl.n||'—')}</strong><div style="font-size:11px;color:var(--mu)">${esc(e.pn||'—')}</div></td><td class="r">${fd(bT)}</td><td class="r">${fd(aL+aM)}</td><td class="r" style="color:${tV>0?'var(--rd)':'var(--gn)'};font-weight:600">${tV>0?'+':''}${fd(tV)}</td><td class="r" style="color:${tV>0?'var(--rd)':'var(--gn)'}">${bT>0?pct((tV/bT)*100):'—'}</td></tr>`;}).join('');
+
   return`<div class="sy">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${[['Total Proposed',f$(tProp),'all time'],['Total Won',f$(tWon),won.length+' jobs'],['Pipeline',f$(tPipe),pipe.length+' active'],['Win Rate',pct(wRate),(won.length+lost.length)+' decided'],['Avg Deal Size',f$(avgDeal),'closed jobs'],['Avg Gross Margin',pct(avgGM),'closed jobs']].map(([l,v,s])=>`<div class="sc"><div class="sv">${v}</div><div class="sl">${l}</div><div style="font-size:10px;color:var(--fn);margin-top:2px">${s}</div></div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      ${[['Total Proposed',f$(tAll),ests.length+' estimates',''],['Total Won',f$(tWon),won.length+' jobs','var(--gn)'],['Total Lost',f$(tLost),lost.length+' jobs','var(--rd)'],['Pipeline',f$(tPipe),pipe.length+' active','']].map(([l,v,s,c])=>`<div class="sc"><div class="sv" style="color:${c||'var(--nv)'}">${v}</div><div class="sl">${l}</div><div style="font-size:10px;color:var(--fn);margin-top:2px">${s}</div></div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div class="sc"><div class="sv">${pct(winRate)}</div><div class="sl">Win Rate</div><div style="font-size:10px;color:var(--fn);margin-top:2px">Won ÷ All estimates</div></div>
+      <div class="sc"><div class="sv" style="color:${closeRate>=50?'var(--gn)':'var(--rd)'}">${pct(closeRate)}</div><div class="sl">Close Rate</div><div style="font-size:10px;color:var(--fn);margin-top:2px">Won ÷ Decided (${decided})</div></div>
+      <div class="sc"><div class="sv">${f$(avgDeal)}</div><div class="sl">Avg Deal Size</div><div style="font-size:10px;color:var(--fn);margin-top:2px">Won jobs only</div></div>
+      <div class="sc"><div class="sv">${pct(avgGM)}</div><div class="sl">Avg Gross Margin</div><div style="font-size:10px;color:var(--fn);margin-top:2px">Closed jobs</div></div>
+    </div>
+
+    <div class="card"><div class="ct">Deal Flow — Last 12 Weeks <div class="ctl"></div></div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Estimates created (navy) vs won (gold) by week</div>
+      ${rSVGBar(weeks,maxW,180,680)}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">
+        ${[['Total Sent',weeks.reduce((s,w)=>s+w.sent,0)],['Total Won',weeks.reduce((s,w)=>s+w.won,0)],['Total Proposed',f$(weeks.reduce((s,w)=>s+w.sentAmt,0))],['Total Won $',f$(weeks.reduce((s,w)=>s+w.wonAmt,0))]].map(([l,v])=>`<div style="text-align:center"><div style="font-weight:700;font-size:16px;color:var(--nv)">${v}</div><div style="font-size:11px;color:var(--mu)">${l}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><div class="ct">Deal Funnel <div class="ctl"></div></div>
+        ${(()=>{const stages=[{l:'All Estimates',n:ests.length,v:tAll,c:'#1B2A4A'},{l:'Active Pipeline',n:pipe.length,v:tPipe,c:'#3B82F6'},{l:'Sent to Client',n:sent.length,v:sent.reduce((s,e)=>s+cEst(e).sl,0),c:'#F59E0B'},{l:'Won / Closed',n:won.length,v:tWon,c:'#10B981'},{l:'Lost',n:lost.length,v:tLost,c:'#EF4444'}];const maxN=Math.max(...stages.map(s=>s.n),1);return stages.map(s=>`<div style="margin-bottom:10px"><div class="fb" style="font-size:13px;margin-bottom:4px"><span style="font-weight:600">${s.l}</span><span class="mono">${s.n} · ${f$(s.v)}</span></div><div style="background:#F3F4F6;border-radius:4px;height:12px;overflow:hidden"><div style="background:${s.c};width:${Math.max(2,(s.n/maxN)*100)}%;height:100%;border-radius:4px"></div></div></div>`).join('');})()}
+      </div>
+      <div class="card"><div class="ct">Revenue Won by Job Type <div class="ctl"></div></div>
+        ${rHBar(byType.map(t=>({l:`${t.s} (${t.wCnt})`,v:t.val,disp:f$(t.val)})),maxType,'#C9A84C')}
+        ${!byType.length?'<div style="color:var(--fn);font-size:13px">No won estimates yet</div>':''}
+      </div>
+    </div>
+
     <div class="card"><div class="ct">Monthly Trend — Last 6 Months <div class="ctl"></div></div>
-      <table class="dt"><thead><tr><th>Month</th><th>Count</th><th class="r">Proposed $</th><th>Won</th><th class="r">Won $</th><th class="r">Win Rate</th></tr></thead>
-      <tbody>${months.map(m=>`<tr><td><strong>${m.lbl}</strong></td><td><div style="display:flex;align-items:center;gap:6px"><div style="background:var(--nv);height:8px;width:${Math.max(4,m.prop/maxProp*100)}px;border-radius:4px;opacity:.7"></div>${m.cnt}</div></td><td class="r">${f$(m.prop)}</td><td>${m.wCnt}</td><td class="r">${f$(m.won)}</td><td class="r">${m.cnt>0?pct((m.wCnt/m.cnt)*100):'—'}</td></tr>`).join('')}</tbody>
-    </table></div>
-    <div class="card"><div class="ct">By Job Type <div class="ctl"></div></div>
-      <table class="dt"><thead><tr><th>Type</th><th class="r">Total</th><th class="r">Won</th><th class="r">Won $</th><th class="r">Win Rate</th></tr></thead>
-      <tbody>${byType.map(t=>`<tr><td><span class="bdg ${t.b}">${t.s}</span></td><td class="r">${t.cnt}</td><td class="r">${t.wCnt}</td><td class="r">${f$(t.val)}</td><td class="r">${t.cnt>0?pct((t.wCnt/t.cnt)*100):'—'}</td></tr>`).join('')}</tbody>
-    </table></div>
+      <div style="margin-bottom:16px">${rSVGBar(months.map(m=>({lbl:m.lbl,sent:m.cnt,won:m.wCnt})),maxM,140,680)}</div>
+      <table class="dt"><thead><tr><th>Month</th><th class="r">Sent</th><th class="r">Won</th><th class="r">Lost</th><th class="r">Proposed $</th><th class="r">Won $</th><th class="r">Win Rate</th><th class="r">Close Rate</th></tr></thead>
+      <tbody>${months.map(m=>`<tr><td><strong>${m.lbl}</strong></td><td class="r">${m.cnt}</td><td class="r" style="color:var(--gn);font-weight:600">${m.wCnt}</td><td class="r" style="color:var(--rd)">${m.lCnt}</td><td class="r">${f$(m.prop)}</td><td class="r" style="font-weight:600">${f$(m.wonAmt)}</td><td class="r">${m.cnt>0?pct((m.wCnt/m.cnt)*100):'—'}</td><td class="r">${(m.wCnt+m.lCnt)>0?pct((m.wCnt/(m.wCnt+m.lCnt))*100):'—'}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+
     ${withAct.length?`<div class="card"><div class="ct">Budget vs Actual — Closed Jobs <div class="ctl"></div></div>
-      <table class="dt"><thead><tr><th>Job</th><th class="r">Bud. Labor</th><th class="r">Act. Labor</th><th class="r">Var.</th><th class="r">Bud. Mat.</th><th class="r">Act. Mat.</th><th class="r">Var.</th><th class="r">Total Var.</th></tr></thead>
+      <table class="dt"><thead><tr><th>Job</th><th class="r">Budgeted</th><th class="r">Actual</th><th class="r">Variance $</th><th class="r">Variance %</th></tr></thead>
       <tbody>${actRows}</tbody></table></div>`:''}
-    <div class="card" style="background:var(--gl);border-color:var(--gd)"><div style="font-size:13px;color:#78500A"><strong>💡 Track budget vs actual</strong> — on any accepted estimate, go to the <strong>Actuals</strong> tab in the editor to log what you actually paid for labor and materials.</div></div>
+
+    <div class="card" style="background:var(--gl);border-color:var(--gd)"><div style="font-size:13px;color:#78500A"><strong>💡 Win Rate vs Close Rate</strong> — Win Rate is Won ÷ All estimates (true conversion from lead to close). Close Rate is Won ÷ Decided only (excludes still-open pipeline). Both matter: high close rate with low win rate means many estimates never get decided.</div></div>
   </div>`;
 }
 
@@ -704,6 +778,44 @@ async function runImport(mode){
     if(prog)prog.textContent=`${done+errors} / ${toImport.length}`;
   }
   document.getElementById('imp-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:40px;margin-bottom:12px">${errors?'⚠️':'✅'}</div><div style="font-size:18px;font-weight:700;color:#1B2A4A;margin-bottom:8px">${errors?'Import complete with errors':'Import complete!'}</div><div style="font-size:14px;color:#6B7280;margin-bottom:20px">${done} estimate${done!==1?'s':''} imported successfully${errors?' · '+errors+' failed':''}</div><button onclick="closeImport();render();" style="padding:10px 24px;background:#1B2A4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;color:white">Done → View Estimates</button></div>`;
+}
+
+
+function applyFilt(arr){
+  return arr.filter(e=>{
+    if(filt.st!=='all'&&e.st!==filt.st)return false;
+    if(filt.jt!=='all'&&e.jt!==filt.jt)return false;
+    if(filt.q){const q=filt.q.toLowerCase();if(!(e.cl.n||'').toLowerCase().includes(q)&&!(e.cl.a||'').toLowerCase().includes(q)&&!(e.pn||'').toLowerCase().includes(q))return false;}
+    if(filt.rng!=='all'){
+      const now=new Date(),d=new Date(e.cr),days=(now-d)/86400000;
+      if(filt.rng==='week'&&days>7)return false;
+      if(filt.rng==='month'&&(now.getMonth()!==d.getMonth()||now.getFullYear()!==d.getFullYear()))return false;
+      if(filt.rng==='30'&&days>30)return false;
+      if(filt.rng==='90'&&days>90)return false;
+    }
+    return true;
+  });
+}
+function clearFilt(){filt={st:'all',jt:'all',rng:'all',q:''};render();}
+function rSVGBar(weeks,maxV,H,W){
+  const groups=weeks.length,gw=Math.floor((W-40)/groups),bw=Math.max(6,Math.floor(gw*0.32));
+  const bars=weeks.map((w,i)=>{
+    const x=40+i*gw+gw/2;
+    const sh=maxV>0?Math.max(2,Math.round((w.sent/maxV)*(H-30))):0;
+    const wh=maxV>0?Math.max(0,Math.round((w.won/maxV)*(H-30))):0;
+    const sy=H-30-sh,wy=H-30-wh;
+    return `<rect x="${x-bw-2}" y="${sy}" width="${bw}" height="${sh}" fill="#1B2A4A" opacity=".75" rx="2" title="${w.lbl}: ${w.sent} sent"/>
+    <rect x="${x+2}" y="${wy}" width="${bw}" height="${wh}" fill="#C9A84C" rx="2" title="${w.lbl}: ${w.won} won"/>
+    <text x="${x}" y="${H-14}" text-anchor="middle" font-size="9" fill="#9CA3AF">${w.lbl}</text>`;
+  }).join('');
+  const gridLines=[0.25,0.5,0.75,1].map(p=>{const y=H-30-Math.round(p*(H-30));return`<line x1="40" x2="${W}" y1="${y}" y2="${y}" stroke="#F3F4F6" stroke-width="1"/><text x="36" y="${y+3}" text-anchor="end" font-size="9" fill="#D1D5DB">${Math.round(maxV*p)}</text>`;}).join('');
+  return `<svg viewBox="0 0 ${W} ${H+10}" width="100%" style="display:block">${gridLines}${bars}
+    <rect x="44" y="${H}" width="10" height="8" fill="#1B2A4A" opacity=".75" rx="1"/><text x="58" y="${H+7}" font-size="10" fill="#6B7280">Sent</text>
+    <rect x="100" y="${H}" width="10" height="8" fill="#C9A84C" rx="1"/><text x="114" y="${H+7}" font-size="10" fill="#6B7280">Won</text>
+  </svg>`;
+}
+function rHBar(items,maxV,color){
+  return items.map(it=>{const w=maxV>0?Math.max(2,(it.v/maxV)*100):0;return`<div style="margin-bottom:10px"><div class="fb" style="font-size:13px;margin-bottom:4px"><span>${it.l}</span><span class="mono" style="font-weight:600">${it.disp}</span></div><div style="background:#F3F4F6;border-radius:4px;height:10px;overflow:hidden"><div style="background:${color};width:${w}%;height:100%;border-radius:4px;transition:width .4s"></div></div></div>`;}).join('');
 }
 
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
