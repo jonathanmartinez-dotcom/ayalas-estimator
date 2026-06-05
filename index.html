@@ -170,6 +170,13 @@
       <div class="fg"><label class="fl">Interior</label><input class="fi" id="wi" value="5 years"></div>
       <div class="fg"><label class="fl">Commercial</label><input class="fi" id="wc" value="5 years"></div>
     </div>
+    <div class="ct" style="margin-top:20px">Remittance & Payment Details <div class="ctl"></div></div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Shown on T&M invoices. Leave blank to show placeholder text.</div>
+    <div class="g2" style="margin-bottom:12px">
+      <div class="fg"><label class="fl">Check Mailing Address</label><input class="fi" id="s-ca" placeholder="5528 Juniper Drive, Brighton CO 80601" value="${appS.checkAddr||''}"></div>
+      <div class="fg"><label class="fl">Zelle Phone / Email</label><input class="fi" id="s-ze" placeholder="303-960-9354" value="${appS.zelle||''}"></div>
+    </div>
+    <div class="fg" style="margin-bottom:16px"><label class="fl">ACH / Wire Info (leave blank for "Routing details on request")</label><input class="fi" id="s-ach" placeholder="Routing details on request" value="${appS.achInfo||''}"></div>
     <button class="btn bp" onclick="saveS()">Save Settings</button>
   </div>
 </div>
@@ -228,7 +235,7 @@ const SURL='https://uyomunqueyjohlrgvhvx.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5b211bnF1ZXlqb2hscmd2aHZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDU5MDEsImV4cCI6MjA5NDc4MTkwMX0.YLm57KZm63oyZsDr47hMAm_ATwA3D3R20RdOX50QF7M';
 const SH={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
 let ests=[],view='home',curId=null,ctab='cl',loaded=false,svTmr=null;
-let logoD=null,appS={we:'10 years',wi:'5 years',wc:'5 years'};
+let logoD=null,appS={we:'10 years',wi:'5 years',wc:'5 years',checkAddr:'',zelle:'',achInfo:''};
 const getCur=()=>ests.find(e=>e.id===curId);
 function goHome(){view='home';curId=null;render();}
 function goEd(id){curId=id;view='editor';ctab='cl';render();}
@@ -264,11 +271,11 @@ async function ldData(){
     }catch(e){}
   },30000);
 }
-function openS(){const lp=document.getElementById('lp');lp.innerHTML=logoD?`<img src="${logoD}" style="width:100%;height:100%;object-fit:contain">`:`<span style="color:var(--fn);font-size:10px;text-align:center;padding:4px">No logo</span>`;document.getElementById('we').value=appS.we||'10 years';document.getElementById('wi').value=appS.wi||'5 years';document.getElementById('wc').value=appS.wc||'5 years';document.getElementById('sOv').classList.add('open');}
+function openS(){const lp=document.getElementById('lp');lp.innerHTML=logoD?`<img src="${logoD}" style="width:100%;height:100%;object-fit:contain">`:`<span style="color:var(--fn);font-size:10px;text-align:center;padding:4px">No logo</span>`;document.getElementById('we').value=appS.we||'10 years';document.getElementById('wi').value=appS.wi||'5 years';document.getElementById('wc').value=appS.wc||'5 years';document.getElementById('s-ca').value=appS.checkAddr||'';document.getElementById('s-ze').value=appS.zelle||'';document.getElementById('s-ach').value=appS.achInfo||'';document.getElementById('sOv').classList.add('open');}
 function closeS(){document.getElementById('sOv').classList.remove('open');}
 function uploadLogo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{logoD=ev.target.result;document.getElementById('lp').innerHTML=`<img src="${logoD}" style="width:100%;height:100%;object-fit:contain">`;sv();};r.readAsDataURL(f);}
 function rmLogo(){logoD=null;document.getElementById('lp').innerHTML=`<span style="color:var(--fn);font-size:10px;text-align:center;padding:4px">No logo</span>`;svLocal();}
-function saveS(){appS.we=document.getElementById('we').value||'10 years';appS.wi=document.getElementById('wi').value||'5 years';appS.wc=document.getElementById('wc').value||'5 years';svLocal();closeS();alert('Settings saved.');}
+function saveS(){appS.we=document.getElementById('we').value||'10 years';appS.wi=document.getElementById('wi').value||'5 years';appS.wc=document.getElementById('wc').value||'5 years';appS.checkAddr=document.getElementById('s-ca').value||'';appS.zelle=document.getElementById('s-ze').value||'';appS.achInfo=document.getElementById('s-ach').value||'';svLocal();closeS();alert('Settings saved.');}
 function rHome(){
   document.getElementById('hc').textContent=ests.length+' estimate'+(ests.length!==1?'s':'');
   const tabs2=`<div class="tabbar" style="margin-bottom:16px"><button class="tb ${homeTab==='ests'?'on':''}" onclick="homeTab='ests';render()">All Estimates</button><button class="tb ${homeTab==='rpts'?'on':''}" onclick="homeTab='rpts';render()">📊 Reports</button></div>`;if(homeTab==='rpts')return`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">Reports</h1></div>`+tabs2+rReports();const sorted=[...ests].sort((a,b)=>b.cr.localeCompare(a.cr));
@@ -395,7 +402,7 @@ function lu(){const e=getCur();if(!e||view!=='editor')return;const c=cEst(e),ok=
 
 let section='est',homeTab='ests',filt={st:'all',jt:'all',rng:'all',q:''};
 let tmJobs=[],tmCurId=null,tmTab='info',tmView='list',tmSvTmr=null,tmInvId=null,tmInvMode='list',tmNewInvType='tm',tmNewInv={},tmNewSel={te:[],me:[]};
-function mkTMJob(){const d=td();return{id:uid(),cr:d,st:'active',cl:{n:'',a:'',p:'',e:''},jn:'',desc:'',linkedEst:'',lMkup:0,mMkup:15,te:[],me:[],invoices:[],notes:[],act:{lPaid:'',mPaid:'',nt:''}};}
+function mkTMJob(){const d=td();return{id:uid(),cr:d,st:'active',cl:{n:'',a:'',p:'',e:''},jn:'',desc:'',agRef:'',linkedEst:'',lMkup:0,mMkup:15,te:[],me:[],invoices:[],notes:[],act:{lPaid:'',mPaid:'',nt:''}};}
 function mkTE(){return{id:uid(),dt:td(),emp:'',hrs:'',rate:'',desc:''};} 
 function mkME(){return{id:uid(),dt:td(),vendor:'',desc:'',cat:'supplies',amt:'',photo:null};}
 function mkNt(){return{id:uid(),dt:new Date().toLocaleString(),txt:''};}
@@ -534,7 +541,7 @@ function rTMEdTB(j){
   return`<div class="fb np" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><div style="display:flex;align-items:center;gap:10px"><button class="btn bh sm" onclick="tmCurId=null;tmView='list';render()">← All Jobs</button><span style="color:var(--bd)">|</span><div><div style="font-weight:700;font-size:15px">${esc(j.jn)||'Untitled Job'}</div><div style="font-size:11px;color:var(--mu)">${esc((j.cl&&j.cl.n)||'')}${j.cl&&j.cl.n?' · ':''}${j.st}</div></div></div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:17px;font-weight:700;color:var(--nv)">${f$(c.total)}</div><div style="font-size:11px;color:var(--mu)">${c.hrs.toFixed(1)}h · ${f$(c.lCost)} labor · ${f$(c.mCost)} mat.</div></div><button class="btn bg" onclick="tmTab='invt';tmInvMode='list';render()">Invoices →</button></div></div>`;
 }
 function rTMInfo(j){
-  return`<div class="sy"><div class="card"><div class="ct">Job Information <div class="ctl"></div></div><div class="g2" style="margin-bottom:12px"><div class="fg"><label class="fl">Job Name</label><input class="fi" value="${esc(j.jn)}" placeholder="e.g. Office Touch-Up — Tenant B" oninput="uTM('jn',this.value)"></div><div class="fg"><label class="fl">Status</label><select class="fs" onchange="uTM('st',this.value)">${['active','complete','invoiced','paid'].map(s=>`<option value="${s}" ${j.st===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></div></div><div class="fg" style="margin-bottom:12px"><label class="fl">Description / Scope</label><textarea class="fta" oninput="uTM('desc',this.value)">${esc(j.desc||'')}</textarea></div><div class="g2"><div class="fg"><label class="fl">Client Name</label><input class="fi" value="${esc((j.cl&&j.cl.n)||'')}" placeholder="Client name" oninput="uTMCl('n',this.value)"></div><div class="fg"><label class="fl">Address</label><input class="fi" value="${esc((j.cl&&j.cl.a)||'')}" oninput="uTMCl('a',this.value)"></div><div class="fg"><label class="fl">Phone</label><input class="fi" value="${esc((j.cl&&j.cl.p)||'')}" oninput="uTMCl('p',this.value)"></div><div class="fg"><label class="fl">Email</label><input class="fi" value="${esc((j.cl&&j.cl.e)||'')}" oninput="uTMCl('e',this.value)"></div></div></div><div class="card"><div class="ct">Invoice Markup <div class="ctl"></div></div><div style="font-size:12px;color:var(--mu);margin-bottom:12px">Markup % added to cost when invoicing the client.</div><div class="g4"><div class="fg"><label class="fl">Labor Markup %</label><input class="fi" type="number" step=".5" value="${j.lMkup||0}" oninput="uTM('lMkup',this.value)"></div><div class="fg"><label class="fl">Materials Markup %</label><input class="fi" type="number" step=".5" value="${j.mMkup||15}" oninput="uTM('mMkup',this.value)"></div></div></div></div>`;
+  return`<div class="sy"><div class="card"><div class="ct">Job Information <div class="ctl"></div></div><div class="g2" style="margin-bottom:12px"><div class="fg"><label class="fl">Job Name</label><input class="fi" value="${esc(j.jn)}" placeholder="e.g. Office Touch-Up — Tenant B" oninput="uTM('jn',this.value)"></div><div class="fg"><label class="fl">Status</label><select class="fs" onchange="uTM('st',this.value)">${['active','complete','invoiced','paid'].map(s=>`<option value="${s}" ${j.st===s?'selected':''}>${s[0].toUpperCase()+s.slice(1)}</option>`).join('')}</select></div></div><div class="fg" style="margin-bottom:12px"><label class="fl">Agreement / Contract Reference</label><input class="fi" value="${esc(j.agRef||'')}" placeholder="e.g. AYL-C-2026-004" oninput="uTM('agRef',this.value)"></div><div class="fg" style="margin-bottom:12px"><label class="fl">Description / Scope</label><textarea class="fta" oninput="uTM('desc',this.value)">${esc(j.desc||'')}</textarea></div><div class="g2"><div class="fg"><label class="fl">Client Name</label><input class="fi" value="${esc((j.cl&&j.cl.n)||'')}" placeholder="Client name" oninput="uTMCl('n',this.value)"></div><div class="fg"><label class="fl">Address</label><input class="fi" value="${esc((j.cl&&j.cl.a)||'')}" oninput="uTMCl('a',this.value)"></div><div class="fg"><label class="fl">Phone</label><input class="fi" value="${esc((j.cl&&j.cl.p)||'')}" oninput="uTMCl('p',this.value)"></div><div class="fg"><label class="fl">Email</label><input class="fi" value="${esc((j.cl&&j.cl.e)||'')}" oninput="uTMCl('e',this.value)"></div></div></div><div class="card"><div class="ct">Invoice Markup <div class="ctl"></div></div><div style="font-size:12px;color:var(--mu);margin-bottom:12px">Markup % added to cost when invoicing the client.</div><div class="g4"><div class="fg"><label class="fl">Labor Markup %</label><input class="fi" type="number" step=".5" value="${j.lMkup||0}" oninput="uTM('lMkup',this.value)"></div><div class="fg"><label class="fl">Materials Markup %</label><input class="fi" type="number" step=".5" value="${j.mMkup||15}" oninput="uTM('mMkup',this.value)"></div></div></div></div>`;
 }
 function rTMTime(j){
   const te=j.te||[];
@@ -602,7 +609,7 @@ function rTMInvPrint2(j,inv){
   return`<div class="fb np" style="margin-bottom:16px;gap:8px"><button class="btn bh" onclick="tmInvMode='detail';render()">&larr; Back to Invoice</button><button class="btn bp" onclick="window.print()">&#128438; Print / Save PDF</button></div>
   <div class="pw"><div class="pp2">
     <div class="ph2"><div style="display:flex;align-items:center;gap:16px">${logoH}<div><div class="pcn">${CO.n}</div><div class="pcs">Professional Painting Services &middot; Denver Metro, CO</div></div></div><div class="pco"><div class="pcp">${CO.p}</div><div>${CO.e}</div><div>${CO.w}</div></div></div>
-    <div class="fb" style="margin-bottom:20px"><div><div style="font-size:26px;font-weight:700;color:var(--nv)">INVOICE</div>${inv.num?`<div style="font-size:14px;color:var(--mu);margin-top:2px">#${esc(inv.num)}</div>`:``}</div><div style="text-align:right">${badge}<div style="font-size:13px;line-height:1.8"><div><strong>Issued:</strong> ${fdt(inv.di)}</div><div><strong>Due:</strong> ${fdt(inv.dd)}</div></div></div></div>
+    <div class="fb" style="margin-bottom:20px"><div><div style="font-size:26px;font-weight:700;color:var(--nv)">INVOICE</div>${inv.num?`<div style="font-size:14px;color:var(--mu);margin-top:2px">#${esc(inv.num)}</div>`:``}${j.agRef?`<div style="font-size:13px;color:var(--mu);margin-top:4px">Per Agreement ${esc(j.agRef)}</div>`:``}</div><div style="text-align:right">${badge}<div style="font-size:13px;line-height:1.8"><div><strong>Issued:</strong> ${fdt(inv.di)}</div><div><strong>Due:</strong> ${fdt(inv.dd)}</div></div></div></div>
     <div class="p2c"><div class="ps"><div class="psh">BILLED TO</div><div class="psb"><div><strong>${esc((j.cl&&j.cl.n)||'&mdash;')}</strong></div><div>${esc((j.cl&&j.cl.a)||'')}</div><div>${esc((j.cl&&j.cl.p)||'')}</div><div>${esc((j.cl&&j.cl.e)||'')}</div></div></div><div class="ps"><div class="psh">JOB DETAILS</div><div class="psb"><div><strong>Job:</strong> ${esc(j.jn||'&mdash;')}</div><div><strong>Type:</strong> ${inv.type==='progress'?'Progress Invoice':inv.type==='final'?'Final Invoice':'T&M Invoice'}</div>${inv.notes?`<div><strong>Notes:</strong> ${esc(inv.notes)}</div>`:``}</div></div></div>
     ${inv.type==='progress'?`<div class="ps"><div class="psh">PROGRESS INVOICE</div><div class="psb">${esc(inv.progDesc||'Progress billing')}</div></div>`:``}
     ${te.length?`<div class="ps"><div class="psh">LABOR &mdash; TIME & MATERIALS</div><table class="dt"><thead><tr><th>Date</th><th>Employee</th><th>Description</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${te.map((e,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${e.dt}</td><td>${esc(e.emp)}</td><td>${esc(e.desc)}</td><td class="r">${n0(e.hrs).toFixed(2)}</td><td class="r">${fd(n0(e.rate))}/hr</td><td class="r">${fd(n0(e.hrs)*n0(e.rate))}</td></tr>`).join('')}${n0(j.lMkup)>0?`<tr><td colspan="5" style="color:var(--mu)">Labor Markup (${j.lMkup}%)</td><td class="r">${fd(ci.laborCost*n0(j.lMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="5" style="font-weight:600">Labor Total</td><td class="r" style="font-weight:700">${fd(ci.laborCost*(1+n0(j.lMkup)/100))}</td></tr></tbody></table></div>`:``}
@@ -623,7 +630,17 @@ function rTMInvPrint2(j,inv){
         `;})()} 
       </tbody></table>
     </div>
-<div class="ps"><div class="psh">PAYMENT INFORMATION</div><div class="psb"><div><strong>Accepted:</strong> Check &middot; Zelle &middot; Cash &middot; Card</div><div style="margin-top:6px;font-size:14px"><strong>Make checks payable to: ${CO.n}</strong></div><div><strong>Questions?</strong> ${CO.p} &middot; ${CO.e}</div><div style="margin-top:8px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days.</div></div></div>
+<div class="ps"><div class="psh">PAYMENT INFORMATION</div><div class="psb">
+        <div><strong>Accepted:</strong> Check &middot; ACH &middot; Zelle &middot; Wire &middot; Card <span style="color:var(--rd);font-size:12px">(3% surcharge applies to card payments)</span></div>
+        <div style="margin-top:10px;font-size:14px"><strong>Make checks payable to: ${CO.n}</strong></div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+          <div><strong>Mail checks to:</strong><br>${appS.checkAddr||'[Business mailing address]'}</div>
+          <div><strong>Zelle:</strong><br>${appS.zelle||'[Zelle phone or email]'}</div>
+        </div>
+        <div style="margin-top:8px;font-size:13px"><strong>ACH / Wire:</strong> ${appS.achInfo||'Routing details on request'}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--mu)"><strong>Questions?</strong> ${CO.p} &middot; ${CO.e}</div>
+        <div style="margin-top:4px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days.</div>
+      </div></div>
     <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
   </div></div>`;
 }
