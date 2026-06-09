@@ -402,10 +402,11 @@ function lu(){const e=getCur();if(!e||view!=='editor')return;const c=cEst(e),ok=
 
 let section='est',homeTab='ests',filt={st:'all',jt:'all',rng:'all',q:''};
 let tmJobs=[],tmCurId=null,tmTab='info',tmView='list',tmSvTmr=null,tmExpandedTE=new Set(),tmExpandedME=new Set(),tmInvId=null,tmInvMode='list',tmNewInvType='tm',tmNewInv={},tmNewSel={te:[],me:[]};
-function mkTMJob(){const d=td();return{id:uid(),cr:d,st:'active',cl:{n:'',a:'',p:'',e:''},jn:'',desc:'',agRef:'',linkedEst:'',lMkup:0,mMkup:15,te:[],me:[],invoices:[],notes:[],act:{lPaid:'',mPaid:'',nt:''}};}
+function mkTMJob(){const d=td();return{id:uid(),cr:d,st:'active',cl:{n:'',a:'',p:'',e:''},jn:'',desc:'',agRef:'',linkedEst:'',lMkup:0,mMkup:15,te:[],me:[],invoices:[],overhead:[],notes:[],act:{lPaid:'',mPaid:'',nt:''}};}
 function mkTE(){return{id:uid(),dt:td(),emp:'',hrs:'',rate:'',costRate:'',desc:''};} 
 function mkME(){return{id:uid(),dt:td(),vendor:'',desc:'',cat:'supplies',amt:'',photo:null};}
-function mkNt(){return{id:uid(),dt:new Date().toLocaleString(),txt:''};}
+function mkOH(){return{id:uid(),dt:td(),desc:'',cat:'fuel',amt:''};}
+ function mkNt(){return{id:uid(),dt:new Date().toLocaleString(),txt:''};}
 function mkInv(type){const d=td();return{id:uid(),type:type||'tm',num:'',di:d,dd:addD(d,30),st:'draft',notes:'',teIds:[],meIds:[],progAmt:'',progDesc:'',payments:[],bFrom:'',bTo:''};}
 
 function hoursBreakdown(j,teIds){
@@ -417,7 +418,8 @@ function hoursBreakdown(j,teIds){
 
 function mkPay(){return{id:uid(),dt:td(),amt:'',method:'check',ref:'',notes:''};}
 function calcInv(j,inv){if(!inv)return{subtotal:0,paid:0,balance:0,laborCost:0,matCost:0,effSt:'draft'};const lMkup=n0(j.lMkup),mMkup=n0(j.mMkup);let laborCost=0,matCost=0,subtotal=0;if(inv.type==='progress'){subtotal=n0(inv.progAmt);}else{const selTE=(j.te||[]).filter(e=>(inv.teIds||[]).includes(e.id));const selME=(j.me||[]).filter(e=>(inv.meIds||[]).includes(e.id));laborCost=selTE.reduce((s,e)=>s+n0(e.hrs)*n0(e.rate),0);matCost=selME.reduce((s,e)=>s+n0(e.amt),0);subtotal=laborCost*(1+lMkup/100)+matCost*(1+mMkup/100);}const paid=(inv.payments||[]).reduce((s,p)=>s+n0(p.amt),0);const balance=Math.max(0,subtotal-paid);const effSt=subtotal>0&&paid>=subtotal?'paid':paid>0?'partial':inv.st;return{subtotal,paid,balance,laborCost,matCost,effSt};}
-function calcTM(j){const te=j.te||[],me=j.me||[],invs=j.invoices||[];const hrs=te.reduce((s,e)=>s+n0(e.hrs),0);const lCost=te.reduce((s,e)=>s+n0(e.hrs)*n0(e.rate),0);const mCost=me.reduce((s,e)=>s+n0(e.amt),0);const lInv=lCost*(1+n0(j.lMkup)/100);const mInv=mCost*(1+n0(j.mMkup)/100);const total=lInv+mInv;const lPayroll=te.reduce((s,e)=>s+n0(e.hrs)*(n0(e.costRate)||n0(e.rate)),0);const lProfit=lCost-lPayroll;const lMarginPct=lCost>0?(lProfit/lCost)*100:0;const workers={};te.forEach(e=>{if(!e.emp)return;if(!workers[e.emp])workers[e.emp]={hrs:0,bill:0,pay:0,profit:0};workers[e.emp].hrs+=n0(e.hrs);workers[e.emp].bill+=n0(e.hrs)*n0(e.rate);const pr=n0(e.costRate)||n0(e.rate);workers[e.emp].pay+=n0(e.hrs)*pr;workers[e.emp].profit+=n0(e.hrs)*(n0(e.rate)-pr);});const billedTE=new Set(invs.flatMap(i=>i.teIds||[]));const billedME=new Set(invs.flatMap(i=>i.meIds||[]));const ubTE=te.filter(e=>!billedTE.has(e.id));const ubME=me.filter(e=>!billedME.has(e.id));const ubLab=ubTE.reduce((s,e)=>s+n0(e.hrs)*n0(e.rate),0);const ubMat=ubME.reduce((s,e)=>s+n0(e.amt),0);const ubTotal=ubLab*(1+n0(j.lMkup)/100)+ubMat*(1+n0(j.mMkup)/100);const tBilled=invs.reduce((s,i)=>s+calcInv(j,i).subtotal,0);const tCollected=invs.reduce((s,i)=>s+(i.payments||[]).reduce((ps,p)=>ps+n0(p.amt),0),0);const tOutstanding=tBilled-tCollected;return{hrs,lCost,mCost,lInv,mInv,total,workers,lPayroll,lProfit,lMarginPct,ubTE,ubME,ubLab,ubMat,ubTotal,tBilled,tCollected,tOutstanding};}
+function calcTM(j){const te=j.te||[],me=j.me||[],invs=j.invoices||[];const hrs=te.reduce((s,e)=>s+n0(e.hrs),0);const lCost=te.reduce((s,e)=>s+n0(e.hrs)*n0(e.rate),0);const mCost=me.reduce((s,e)=>s+n0(e.amt),0);const lInv=lCost*(1+n0(j.lMkup)/100);const mInv=mCost*(1+n0(j.mMkup)/100);const total=lInv+mInv;const lPayroll=te.reduce((s,e)=>s+n0(e.hrs)*(n0(e.costRate)||n0(e.rate)),0);const lProfit=lCost-lPayroll;const lMarginPct=lCost>0?(lProfit/lCost)*100:0;const workers={};te.forEach(e=>{if(!e.emp)return;if(!workers[e.emp])workers[e.emp]={hrs:0,bill:0,pay:0,profit:0};workers[e.emp].hrs+=n0(e.hrs);workers[e.emp].bill+=n0(e.hrs)*n0(e.rate);const pr=n0(e.costRate)||n0(e.rate);workers[e.emp].pay+=n0(e.hrs)*pr;workers[e.emp].profit+=n0(e.hrs)*(n0(e.rate)-pr);});const billedTE=new Set(invs.flatMap(i=>i.teIds||[]));const billedME=new Set(invs.flatMap(i=>i.meIds||[]));const ubTE=te.filter(e=>!billedTE.has(e.id));const ubME=me.filter(e=>!billedME.has(e.id));const ubLab=ubTE.reduce((s,e)=>s+n0(e.hrs)*n0(e.rate),0);const ubMat=ubME.reduce((s,e)=>s+n0(e.amt),0);const ubTotal=ubLab*(1+n0(j.lMkup)/100)+ubMat*(1+n0(j.mMkup)/100);const tBilled=invs.reduce((s,i)=>s+calcInv(j,i).subtotal,0);const tCollected=invs.reduce((s,i)=>s+(i.payments||[]).reduce((ps,p)=>ps+n0(p.amt),0),0);const tOutstanding=tBilled-tCollected;const oh=j.overhead||[];const totalOH=oh.reduce((s,e)=>s+n0(e.amt),0);const netProfit=lProfit-totalOH;const netProfitPct=lCost>0?(netProfit/lCost)*100:0;
+  return{hrs,lCost,mCost,lInv,mInv,total,workers,lPayroll,lProfit,lMarginPct,ubTE,ubME,ubLab,ubMat,ubTotal,tBilled,tCollected,tOutstanding,totalOH,netProfit,netProfitPct};}
 function svTM(){if(!loaded||!tmCurId)return;clearTimeout(tmSvTmr);tmSvTmr=setTimeout(()=>{const j=getTMCur();if(!j)return;setSI(true);fetch(SURL+'/rest/v1/tm_jobs',{method:'POST',headers:{...SH,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:j.id,data:j,updated_at:new Date().toISOString()})}).then(()=>setSI(false)).catch(()=>setSI(false,'err'));},900);}
 async function loadTM(){try{const res=await fetch(SURL+'/rest/v1/tm_jobs?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)return;const rows=await res.json();if(Array.isArray(rows))tmJobs=rows.map(r=>r.data).filter(Boolean);}catch(e){}}
 function getTMCur(){return tmJobs.find(j=>j.id===tmCurId);}
@@ -436,6 +438,11 @@ function addME(){const j=getTMCur();if(!j)return;j.me=[...(j.me||[]),mkME()];svT
 function delME(i){const j=getTMCur();if(!j)return;const en=j.me[i];if(en&&en.photo)deleteFromStorage(en.photo);j.me=j.me.filter((_,idx)=>idx!==i);svTM();render();}
 function uME(i,k,v){const j=getTMCur();if(!j)return;j.me=j.me.map((e,idx)=>idx===i?{...e,[k]:v}:e);svTM();}
 async function uMEPh(i,inp){const j=getTMCur();if(!j||!inp.files[0])return;try{setSI(true);const url=await uploadToStorage(inp.files[0],'tm/'+j.id);j.me=j.me.map((e,idx)=>idx===i?{...e,photo:url}:e);await svTMNow();render();}catch(err){setSI(false,'err');alert('Receipt upload failed: '+err.message);}}
+
+function addOH(){const j=getTMCur();if(!j)return;j.overhead=[...(j.overhead||[]),mkOH()];svTM();render();}
+function delOH(i){const j=getTMCur();if(!j)return;j.overhead=(j.overhead||[]).filter((_,idx)=>idx!==i);svTM();render();}
+function uOH(i,k,v){const j=getTMCur();if(!j)return;j.overhead=(j.overhead||[]).map((e,idx)=>idx===i?{...e,[k]:v}:e);svTM();}
+
 function addNote(){const j=getTMCur();if(!j)return;j.notes=[...(j.notes||[]),mkNt()];svTM();render();}
 function delNote(i){const j=getTMCur();if(!j)return;j.notes=j.notes.filter((_,idx)=>idx!==i);svTM();render();}
 function uTMNote(i,v){const j=getTMCur();if(!j)return;j.notes=j.notes.map((n,idx)=>idx===i?{...n,txt:v}:n);svTM();}
@@ -629,7 +636,34 @@ function rTMMat(j){
   `<div style="color:var(--fn);font-size:13px;padding:8px 0 4px">All material entries invoiced &mdash; add new entries below.</div>`}<button class="btn bh sm" style="margin-top:10px" onclick="addME()">+ Add Material / Expense</button></div>
   ${Object.keys(byInv).length?`<div class="card"><div class="ct">Invoiced Materials <span style="font-size:11px;font-weight:400;color:var(--mu);text-transform:none;letter-spacing:0">&mdash; click to expand / edit</span><div class="ctl"></div></div>${billedGroups}</div>`:''}
   ${ubPhotos.length?`<div class="card"><div class="ct">Unbilled Receipts <div class="ctl"></div></div><div class="pg">${ubPhotos.map(e=>`<div><img src="${e.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--bd)"><div style="font-size:10px;color:var(--mu);margin-top:3px;text-align:center">${esc(e.desc||e.vendor||'Receipt')} &middot; ${fd(n0(e.amt))}</div></div>`).join('')}</div></div>`:''}
-  </div>`;
+  
+  <div class="card" style="border-color:#FCD34D;background:linear-gradient(135deg,#FFFBEB,#FFF)">
+    <div class="ct" style="color:#92400E">
+      &#128274; Overhead &amp; Internal Expenses
+      <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:#B45309;margin-left:8px">Internal only &mdash; never shown on invoice</span>
+      <div class="ctl"></div>
+    </div>
+    ${(()=>{
+      const oh=j.overhead||[];
+      const cats=['fuel','tools','equipment','phone','insurance','permits','disposal','misc'];
+      const rows=oh.map((e,i)=>`<div style="display:grid;grid-template-columns:115px 1fr 110px 95px auto;gap:7px;align-items:center;padding:7px 0;border-bottom:1px solid #FEF3C7">
+        <input class="fi" style="padding:5px 8px;font-size:12px" type="date" value="${e.dt}" oninput="uOH(${i},'dt',this.value)">
+        <input class="fi" style="padding:5px 8px;font-size:12px" value="${esc(e.desc)}" placeholder="e.g. Fuel — truck to site" oninput="uOH(${i},'desc',this.value)">
+        <select class="fs" style="padding:5px 7px;font-size:12px" onchange="uOH(${i},'cat',this.value)">${cats.map(c=>`<option value="${c}" ${e.cat===c?'selected':''}>${c[0].toUpperCase()+c.slice(1)}</option>`).join('')}</select>
+        <input class="fi" style="padding:5px 8px;font-size:12px;font-family:'DM Mono',monospace;background:#FFFBEB" type="number" step=".01" value="${e.amt}" placeholder="$" oninput="uOH(${i},'amt',this.value)">
+        <button class="btn bd2 xs" onclick="delOH(${i})">&#10005;</button>
+      </div>`).join('');
+      const totOH=oh.reduce((s,e)=>s+n0(e.amt),0);
+      const byCat={};oh.forEach(e=>{if(!byCat[e.cat])byCat[e.cat]=0;byCat[e.cat]+=n0(e.amt);});
+      if(!oh.length)return`<div style="color:#B45309;font-size:13px;padding:8px 0 12px;opacity:.7">No overhead logged yet &mdash; track fuel, tools, equipment wear, and other job costs here.</div>`;
+      return`<div style="display:grid;grid-template-columns:115px 1fr 110px 95px auto;gap:7px;padding:5px 0;margin-bottom:4px">${['Date','Description','Category','Amount',''].map(h=>`<div class="fl" style="font-size:11px">${h}</div>`).join('')}</div>
+      <div>${rows}</div>
+      <div class="dv"></div>
+      <div class="fb"><span style="color:#92400E;font-weight:600">Total Overhead (not invoiced)</span><span class="mono" style="font-weight:700;font-size:16px;color:#92400E">${fd(totOH)}</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${Object.entries(byCat).map(([cat,amt])=>`<span style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:3px 8px;font-size:11px;color:#92400E"><strong>${cat}</strong>: ${fd(amt)}</span>`).join('')}</div>`;
+    })()}
+    <button class="btn" style="margin-top:10px;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E" onclick="addOH()">+ Add Overhead Expense</button>
+  </div></div>`;
 }
 
 function rTMInvTab(j){
@@ -717,9 +751,12 @@ function rTMSum2(j){
     <span><span style="display:inline-block;width:10px;height:10px;background:#D1D5DB;border-radius:2px;margin-right:4px"></span>Materials Pass-through ${pct(matPct)}</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Total Revenue</div><div style="font-weight:700;font-size:16px">${fd(totRev)}</div></div>
-    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Total Cost</div><div style="font-weight:700;font-size:16px;color:var(--rd)">${fd(totCost)}</div></div>
-    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Gross Profit</div><div style="font-weight:700;font-size:16px;color:var(--gn)">${fd(labMargin)}</div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="text-align:center"><div style="font-size:11px;color:var(--mu)">Total Revenue</div><div style="font-weight:700;font-size:15px">${fd(totRev)}</div></div>
+      <div style="text-align:center"><div style="font-size:11px;color:var(--mu)">Total Cost</div><div style="font-weight:700;font-size:15px;color:var(--rd)">${fd(totCost)}</div></div>
+      <div style="text-align:center"><div style="font-size:11px;color:var(--mu)">Labor Margin</div><div style="font-weight:700;font-size:15px;color:var(--gn)">${fd(labMargin)}</div></div>
+      <div style="text-align:center;background:#FFFBEB;border-radius:8px;padding:6px"><div style="font-size:11px;color:#B45309">Net After Overhead</div><div style="font-weight:700;font-size:15px;color:${c.netProfit>=0?'var(--gn)':'var(--rd)'}">${fd(c.netProfit)}</div></div>
+    </div>
   </div>`;
 
   // Invoice breakdown
@@ -737,6 +774,8 @@ function rTMSum2(j){
       <td class="r">${fd(iLB)}</td>
       <td class="r" style="color:var(--rd)">${fd(iLP)}</td>
       <td class="r" style="color:var(--gn);font-weight:600">${fd(iMg)}<div style="font-size:10px;font-weight:400;color:var(--mu)">${iLB>0?pct(iMgPct):''}</div></td>
+      <td class="r" style="color:#92400E">${(()=>{const oh=j.overhead||[];const invOH=inv.bFrom&&inv.bTo?oh.filter(e=>e.dt>=inv.bFrom&&e.dt<=inv.bTo):[];const iOH=invOH.reduce((s,e)=>s+n0(e.amt),0);return iOH>0?`(${fd(iOH)})`:'—';})()}</td>
+      <td class="r" style="font-weight:600">${(()=>{const oh=j.overhead||[];const invOH=inv.bFrom&&inv.bTo?oh.filter(e=>e.dt>=inv.bFrom&&e.dt<=inv.bTo):[];const iOH=invOH.reduce((s,e)=>s+n0(e.amt),0);const net=iMg-iOH;return`<span style="color:${net>=0?'var(--gn)':'var(--rd)'}">${fd(net)}</span>`;})()}</td>
       <td class="r" style="color:var(--mu)">${fd(iMC)}</td>
       <td class="r" style="font-weight:700">${fd(ci.subtotal)}</td>
       <td class="r" style="color:var(--gn)">${fd(ci.paid)}</td>
@@ -752,8 +791,13 @@ function rTMSum2(j){
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
     <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn);font-size:${fd(labMargin).length>10?'14px':'20px'}">${fd(labMargin)}</div><div class="sl">Labor Margin</div><div style="font-size:10px;color:#166534;margin-top:2px">${pct(labMPct)} of labor revenue</div></div>
+    <div class="sc" style="border-color:#FCD34D;background:#FFFBEB"><div class="sv" style="color:#92400E;font-size:${fd(c.totalOH).length>10?'14px':'20px'}">(${fd(c.totalOH)})</div><div class="sl">Job Overhead</div><div style="font-size:10px;color:#B45309;margin-top:2px">internal costs &middot; not invoiced</div></div>
+    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:${c.netProfit>=0?'var(--gn)':'var(--rd)'};font-size:${fd(c.netProfit).length>10?'14px':'20px'}">${fd(c.netProfit)}</div><div class="sl">Net Job Profit</div><div style="font-size:10px;color:#166534;margin-top:2px">${pct(c.netProfitPct)} net margin</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
     <div class="sc"><div class="sv" style="font-size:${fd(matCost).length>10?'14px':'20px'}">${fd(matCost)}</div><div class="sl">Materials Pass-through</div><div style="font-size:10px;color:var(--fn);margin-top:2px">reimbursement only &middot; $0 margin</div></div>
     <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn)">${pct(grossPct)}</div><div class="sl">Gross Margin %</div><div style="font-size:10px;color:#166534;margin-top:2px">labor margin &divide; total revenue</div></div>
+    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:${c.netProfit>=0?'var(--gn)':'var(--rd)'}">${pct(c.netProfitPct)}</div><div class="sl">Net Margin %</div><div style="font-size:10px;color:#166534;margin-top:2px">after overhead &divide; total revenue</div></div>
   </div>
   <div class="card"><div class="ct">Revenue Composition <div class="ctl"></div></div>${compBar}</div>
   <div class="card"><div class="ct">Worker Breakdown <div class="ctl"></div></div>
@@ -770,9 +814,9 @@ function rTMSum2(j){
       <div><div style="font-size:11px;color:var(--mu)">Total Margin</div><div style="font-weight:700;color:var(--gn)">${fd(labMargin)} (${pct(labMPct)})</div></div>
     </div>
   </div>
-  ${invs.length?`<div class="card"><div class="ct">Breakdown by Invoice <div class="ctl"></div></div>
-    <div style="overflow-x:auto"><table class="dt" style="min-width:700px"><thead><tr><th>Invoice</th><th class="r">Labor Billed</th><th class="r">Labor Cost</th><th class="r">Labor Margin</th><th class="r">Materials</th><th class="r">Total</th><th class="r">Collected</th><th class="r">Balance</th><th>Status</th></tr></thead>
-    <tbody>${invRows}<tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total</td><td class="r" style="font-weight:700">${fd(labRev)}</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(labPay)}</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(labMargin)}</td><td class="r">${fd(matCost)}</td><td class="r" style="font-weight:700">${fd(c.tBilled)}</td><td class="r" style="color:var(--gn)">${fd(c.tCollected)}</td><td class="r" style="color:${c.tOutstanding>0?'var(--rd)':'var(--gn)'};">${fd(c.tOutstanding)}</td><td></td></tr></tbody>
+  ${invs.length?`<div class="card"><div class="ct">Breakdown by Invoice <div class="ctl"></div></div>${c.totalOH>0&&!invs.some(i=>i.bFrom)?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#92400E">&#128274; Overhead allocation requires <strong>Billing Period dates</strong> on each invoice. Set From/To dates in the Invoice tab to allocate overhead by period.</div>`:''}  
+    <div style="overflow-x:auto"><table class="dt" style="min-width:700px"><thead><tr><th>Invoice</th><th class="r">Labor Billed</th><th class="r">Labor Cost</th><th class="r">Labor Margin</th><th class="r">Overhead</th><th class="r">Net Profit</th><th class="r">Materials</th><th class="r">Total</th><th class="r">Collected</th><th class="r">Balance</th><th>Status</th></tr></thead>
+    <tbody>${invRows}<tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total</td><td class="r" style="font-weight:700">${fd(labRev)}</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(labPay)}</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(labMargin)}</td><td class="r" style="color:#92400E">${c.totalOH>0?`(${fd(c.totalOH)})`:'—'}</td><td class="r" style="font-weight:700;color:${c.netProfit>=0?'var(--gn)':'var(--rd)'}">${fd(c.netProfit)}</td><td class="r">${fd(matCost)}</td><td class="r" style="font-weight:700">${fd(c.tBilled)}</td><td class="r" style="color:var(--gn)">${fd(c.tCollected)}</td><td class="r" style="color:${c.tOutstanding>0?'var(--rd)':'var(--gn)'};">${fd(c.tOutstanding)}</td><td></td></tr></tbody>
     </table></div></div>`:''}
   </div>`;
 }
