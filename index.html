@@ -672,16 +672,57 @@ function rTMNotes(j){
 }
 function rTMSum2(j){
   const c=calcTM(j),te=j.te||[],me=j.me||[],invs=j.invoices||[];
-  // All workers across all entries
   const allW={};
   te.forEach(e=>{if(!e.emp)return;if(!allW[e.emp])allW[e.emp]={hrs:0,bill:0,pay:0,profit:0};allW[e.emp].hrs+=n0(e.hrs);allW[e.emp].bill+=n0(e.hrs)*n0(e.rate);const pr=n0(e.costRate)||n0(e.rate);allW[e.emp].pay+=n0(e.hrs)*pr;allW[e.emp].profit+=n0(e.hrs)*(n0(e.rate)-pr);});
   const sortedW=Object.entries(allW).sort((a,b)=>b[1].bill-a[1].bill);
   const hasPayRates=te.some(e=>n0(e.costRate)>0&&n0(e.costRate)!==n0(e.rate));
-  // True P&L
   const labRev=c.lCost,labPay=c.lPayroll,labMargin=c.lProfit,labMPct=c.lMarginPct;
-  const matCost=c.mCost; // pass-through, no margin
-  const totRev=labRev+matCost,totCost=labPay+matCost,grossPct=totRev>0?(labMargin/totRev)*100:0;
-  // Per invoice breakdown
+  const matCost=c.mCost,totRev=labRev+matCost,totCost=labPay+matCost,grossPct=totRev>0?(labMargin/totRev)*100:0;
+
+  // Worker HTML bars (responsive, no overflow)
+  const wBars=sortedW.map(([nm,w])=>{
+    const billPct=w.bill>0?(w.pay/w.bill)*100:100;
+    const mgPct=w.bill>0?(w.profit/w.bill)*100:0;
+    const billRate=w.hrs>0?w.bill/w.hrs:0,payRate=w.hrs>0?w.pay/w.hrs:0;
+    return`<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;flex-wrap:wrap;gap:4px">
+        <span style="font-weight:600;font-size:14px">${esc(nm)}</span>
+        <div style="font-size:12px;color:var(--mu);display:flex;gap:12px;flex-wrap:wrap">
+          <span>${w.hrs.toFixed(1)}h</span>
+          <span>${fd(billRate)}/hr bill &middot; ${fd(payRate)}/hr cost</span>
+          <span style="font-weight:600;color:var(--nv)">${fd(w.bill)} billed</span>
+          <span style="color:var(--rd)">${fd(w.pay)} cost</span>
+          <span style="font-weight:700;color:var(--gn)">${fd(w.profit)} margin ${w.bill>0?'('+pct(mgPct)+')':''}</span>
+        </div>
+      </div>
+      <div style="background:#F3F4F6;border-radius:6px;height:14px;overflow:hidden;display:flex">
+        <div style="background:#FCA5A5;flex:${Math.max(billPct,0.1)}" title="Payroll cost: ${fd(w.pay)}"></div>
+        <div style="background:#86EFAC;flex:${Math.max(mgPct,0)}" title="Margin: ${fd(w.profit)}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Revenue composition bar (HTML)
+  const matPct=totRev>0?(matCost/totRev)*100:0;
+  const labPayPct=totRev>0?(labPay/totRev)*100:0;
+  const labMgPct2=totRev>0?(labMargin/totRev)*100:0;
+  const compBar=`<div style="border-radius:8px;height:28px;overflow:hidden;display:flex;margin-bottom:10px">
+    <div style="background:#86EFAC;flex:${Math.max(labMgPct2,0.1)}" title="Labor Margin (${pct(labMgPct2)}): ${fd(labMargin)}"></div>
+    <div style="background:#FCA5A5;flex:${Math.max(labPayPct,0.1)}" title="Payroll Cost (${pct(labPayPct)}): ${fd(labPay)}"></div>
+    <div style="background:#D1D5DB;flex:${Math.max(matPct,0.1)}" title="Materials Pass-through (${pct(matPct)}): ${fd(matCost)}"></div>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin-bottom:16px">
+    <span><span style="display:inline-block;width:10px;height:10px;background:#86EFAC;border-radius:2px;margin-right:4px"></span>Labor Margin ${pct(labMgPct2)}</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#FCA5A5;border-radius:2px;margin-right:4px"></span>Payroll Cost ${pct(labPayPct)}</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#D1D5DB;border-radius:2px;margin-right:4px"></span>Materials Pass-through ${pct(matPct)}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Total Revenue</div><div style="font-weight:700;font-size:16px">${fd(totRev)}</div></div>
+    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Total Cost</div><div style="font-weight:700;font-size:16px;color:var(--rd)">${fd(totCost)}</div></div>
+    <div style="text-align:center"><div style="font-size:11px;color:var(--mu);margin-bottom:2px">Gross Profit</div><div style="font-weight:700;font-size:16px;color:var(--gn)">${fd(labMargin)}</div></div>
+  </div>`;
+
+  // Invoice breakdown
   const invRows=invs.map(inv=>{
     const ci=calcInv(j,inv);
     const iTE=te.filter(e=>(inv.teIds||[]).includes(e.id));
@@ -695,7 +736,7 @@ function rTMSum2(j){
       <td><strong>${esc(inv.num||'(No #)')}</strong><div style="font-size:11px;color:var(--mu)">${fdt(inv.di)}</div></td>
       <td class="r">${fd(iLB)}</td>
       <td class="r" style="color:var(--rd)">${fd(iLP)}</td>
-      <td class="r" style="color:var(--gn);font-weight:600">${fd(iMg)} <span style="font-size:10px;font-weight:400;color:var(--mu)">${iLB>0?'('+pct(iMgPct)+')':''}</span></td>
+      <td class="r" style="color:var(--gn);font-weight:600">${fd(iMg)}<div style="font-size:10px;font-weight:400;color:var(--mu)">${iLB>0?pct(iMgPct):''}</div></td>
       <td class="r" style="color:var(--mu)">${fd(iMC)}</td>
       <td class="r" style="font-weight:700">${fd(ci.subtotal)}</td>
       <td class="r" style="color:var(--gn)">${fd(ci.paid)}</td>
@@ -703,70 +744,36 @@ function rTMSum2(j){
       <td><span class="bdg ${sc[ci.effSt]||'b-dr'}">${ci.effSt}</span></td>
     </tr>`;
   }).join('');
-  // Worker margin SVG bars
-  const maxBill=Math.max(...sortedW.map(([,w])=>w.bill),1);
-  const barH=28,barGap=8,svgW=600,labelW=130,chartW=svgW-labelW-60;
-  const wBars=sortedW.map(([nm,w],i)=>{
-    const y=i*(barH+barGap);
-    const bw=Math.max(4,(w.bill/maxBill)*chartW);
-    const pw=Math.max(0,(w.pay/maxBill)*chartW);
-    const mgw=bw-pw;
-    return`<text x="0" y="${y+18}" font-size="12" fill="#374151" font-family="inherit">${esc(nm)}</text>
-    <rect x="${labelW}" y="${y+2}" width="${bw}" height="${barH-4}" fill="#DBEAFE" rx="3"/>
-    <rect x="${labelW}" y="${y+2}" width="${pw}" height="${barH-4}" fill="#FCA5A5" rx="3"/>
-    ${mgw>0?`<rect x="${labelW+pw}" y="${y+2}" width="${mgw}" height="${barH-4}" fill="#86EFAC" rx="3"/>`:''}
-    <text x="${labelW+bw+6}" y="${y+18}" font-size="11" fill="#6B7280">${fd(w.bill)} billed · ${fd(w.pay)} cost · <tspan fill="#15803D" font-weight="600">${fd(w.profit)} margin</tspan></text>`;
-  }).join('');
-  const svgH=sortedW.length*(barH+barGap)+30;
-  const workerChart=`<svg viewBox="0 0 ${svgW} ${svgH}" width="100%" style="display:block;overflow:visible">
-    ${wBars}
-    <rect x="${labelW}" y="${svgH-22}" width="14" height="10" fill="#DBEAFE" rx="2"/><text x="${labelW+18}" y="${svgH-13}" font-size="10" fill="#6B7280">Billed</text>
-    <rect x="${labelW+65}" y="${svgH-22}" width="14" height="10" fill="#FCA5A5" rx="2"/><text x="${labelW+83}" y="${svgH-13}" font-size="10" fill="#6B7280">Payroll Cost</text>
-    <rect x="${labelW+160}" y="${svgH-22}" width="14" height="10" fill="#86EFAC" rx="2"/><text x="${labelW+178}" y="${svgH-13}" font-size="10" fill="#6B7280">Margin</text>
-  </svg>`;
-  // Revenue composition bar
-  const compW=600,compH=40;
-  const labRevPct=totRev>0?(labPay/totRev)*100:0;
-  const labMgPct2=totRev>0?(labMargin/totRev)*100:0;
-  const matPct=totRev>0?(matCost/totRev)*100:0;
-  const compChart=`<svg viewBox="0 0 ${compW} ${compH+30}" width="100%" style="display:block">
-    <rect x="0" y="0" width="${compW}" height="${compH}" rx="6" fill="#F3F4F6"/>
-    <rect x="0" y="0" width="${(labMgPct2/100)*compW}" height="${compH}" rx="6" fill="#86EFAC"/>
-    <rect x="${(labMgPct2/100)*compW}" y="0" width="${(labRevPct/100)*compW}" height="${compH}" fill="#FCA5A5"/>
-    <rect x="${((labMgPct2+labRevPct)/100)*compW}" y="0" width="${(matPct/100)*compW}" height="${compH}" rx="6" fill="#D1D5DB"/>
-    <text x="4" y="${compH+18}" font-size="10" fill="#6B7280">&#9632; Labor Margin (${pct(labMgPct2)})</text>
-    <text x="160" y="${compH+18}" font-size="10" fill="#6B7280">&#9632; Payroll Cost (${pct(labRevPct)})</text>
-    <text x="320" y="${compH+18}" font-size="10" fill="#6B7280">&#9632; Materials Pass-through (${pct(matPct)})</text>
-  </svg>`;
+
   return`<div class="sy">
-  ${!hasPayRates?`<div class="card" style="background:#FFFBEB;border-color:#FCD34D"><div style="font-size:13px;color:#92400E">&#9888; <strong>Pay Rates not set.</strong> Go to the Time tab and enter each worker's Pay Rate to see accurate margin. Currently showing $0 labor margin.</div></div>`:''}
+  ${!hasPayRates?`<div class="card" style="background:#FFFBEB;border-color:#FCD34D"><div style="font-size:13px;color:#92400E">&#9888; <strong>Pay Rates not set.</strong> Go to the Time tab and enter each worker's Pay Rate to see accurate margin.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-    ${[['Total Hours',c.hrs.toFixed(2)+'h','all workers'],['Labor Revenue',fd(labRev),'client billed'],['Labor Payroll',fd(labPay),'worker cost']].map(([l,v,s])=>`<div class="sc"><div class="sv" style="font-size:${v.length>8?'15px':'20px'}">${v}</div><div class="sl">${l}</div><div style="font-size:10px;color:var(--fn);margin-top:2px">${s}</div></div>`).join('')}
+    ${[['Total Hours',c.hrs.toFixed(2)+'h','all workers',''],['Labor Revenue',fd(labRev),'client billed',''],['Labor Payroll',fd(labPay),'worker cost','']].map(([l,v,s,c])=>`<div class="sc"><div class="sv" style="font-size:${v.length>10?'14px':'20px'}">${v}</div><div class="sl">${l}</div><div style="font-size:10px;color:var(--fn);margin-top:2px">${s}</div></div>`).join('')}
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn);font-size:${fd(labMargin).length>8?'15px':'20px'}">${fd(labMargin)}</div><div class="sl">Labor Margin</div><div style="font-size:10px;color:#166534;margin-top:2px">${pct(labMPct)} of labor revenue</div></div>
-    <div class="sc"><div class="sv" style="font-size:${fd(matCost).length>8?'15px':'20px'}">${fd(matCost)}</div><div class="sl">Materials (Pass-through)</div><div style="font-size:10px;color:var(--fn);margin-top:2px">reimbursement only · $0 margin</div></div>
-    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn);font-size:${fd(labMargin).length>8?'15px':'20px'}">${pct(grossPct)}</div><div class="sl">Gross Margin %</div><div style="font-size:10px;color:#166534;margin-top:2px">labor margin ÷ total revenue</div></div>
+    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn);font-size:${fd(labMargin).length>10?'14px':'20px'}">${fd(labMargin)}</div><div class="sl">Labor Margin</div><div style="font-size:10px;color:#166534;margin-top:2px">${pct(labMPct)} of labor revenue</div></div>
+    <div class="sc"><div class="sv" style="font-size:${fd(matCost).length>10?'14px':'20px'}">${fd(matCost)}</div><div class="sl">Materials Pass-through</div><div style="font-size:10px;color:var(--fn);margin-top:2px">reimbursement only &middot; $0 margin</div></div>
+    <div class="sc" style="border-color:var(--gd);background:var(--gl)"><div class="sv" style="color:var(--gn)">${pct(grossPct)}</div><div class="sl">Gross Margin %</div><div style="font-size:10px;color:#166534;margin-top:2px">labor margin &divide; total revenue</div></div>
   </div>
-  <div class="card"><div class="ct">Revenue Composition <div class="ctl"></div></div>
-    <div style="margin-bottom:8px">${compChart}</div>
-    <div class="g3" style="font-size:13px">
-      <div><span style="color:var(--mu)">Total Revenue</span><div style="font-weight:700;font-size:16px">${fd(totRev)}</div></div>
-      <div><span style="color:var(--mu)">Total Cost</span><div style="font-weight:700;font-size:16px;color:var(--rd)">${fd(totCost)}</div></div>
-      <div><span style="color:var(--mu)">Gross Profit</span><div style="font-weight:700;font-size:16px;color:var(--gn)">${fd(labMargin)}</div></div>
+  <div class="card"><div class="ct">Revenue Composition <div class="ctl"></div></div>${compBar}</div>
+  <div class="card"><div class="ct">Worker Breakdown <div class="ctl"></div></div>
+    <div style="margin-bottom:8px;display:flex;gap:16px;font-size:11px;color:var(--mu)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#FCA5A5;border-radius:2px;margin-right:3px"></span>Payroll cost</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#86EFAC;border-radius:2px;margin-right:3px"></span>Margin</span>
+    </div>
+    ${wBars}
+    <div class="dv"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">
+      <div><div style="font-size:11px;color:var(--mu)">Total Hours</div><div style="font-weight:700">${c.hrs.toFixed(2)}h</div></div>
+      <div><div style="font-size:11px;color:var(--mu)">Total Billed</div><div style="font-weight:700">${fd(labRev)}</div></div>
+      <div><div style="font-size:11px;color:var(--mu)">Total Payroll</div><div style="font-weight:700;color:var(--rd)">${fd(labPay)}</div></div>
+      <div><div style="font-size:11px;color:var(--mu)">Total Margin</div><div style="font-weight:700;color:var(--gn)">${fd(labMargin)} (${pct(labMPct)})</div></div>
     </div>
   </div>
-  <div class="card"><div class="ct">Worker Margin Breakdown <div class="ctl"></div></div>
-    <div style="margin-bottom:16px">${workerChart}</div>
-    <table class="dt"><thead><tr><th>Worker</th><th class="r">Hours</th><th class="r">Bill Rate</th><th class="r">Pay Rate</th><th class="r">Revenue</th><th class="r">Payroll Cost</th><th class="r">Margin $</th><th class="r">Margin %</th></tr></thead>
-    <tbody>${sortedW.map(([nm,w])=>`<tr><td style="font-weight:600">${esc(nm)}</td><td class="r">${w.hrs.toFixed(2)}</td><td class="r">${fd(w.hrs>0?w.bill/w.hrs:0)}/hr</td><td class="r">${fd(w.hrs>0?w.pay/w.hrs:0)}/hr</td><td class="r">${fd(w.bill)}</td><td class="r" style="color:var(--rd)">${fd(w.pay)}</td><td class="r" style="color:${w.profit>0?'var(--gn)':'var(--mu)'};font-weight:600">${fd(w.profit)}</td><td class="r" style="color:${w.profit>0?'var(--gn)':'var(--mu)'}">${w.bill>0?pct((w.profit/w.bill)*100):'—'}</td></tr>`).join('')}
-    <tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total</td><td class="r" style="font-weight:700">${c.hrs.toFixed(2)}</td><td></td><td></td><td class="r" style="font-weight:700">${fd(labRev)}</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(labPay)}</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(labMargin)}</td><td class="r" style="font-weight:700;color:var(--gn)">${pct(labMPct)}</td></tr>
-    </tbody></table>
-  </div>
   ${invs.length?`<div class="card"><div class="ct">Breakdown by Invoice <div class="ctl"></div></div>
-    <table class="dt"><thead><tr><th>Invoice</th><th class="r">Labor Billed</th><th class="r">Labor Cost</th><th class="r">Labor Margin</th><th class="r">Materials</th><th class="r">Invoice Total</th><th class="r">Collected</th><th class="r">Balance</th><th>Status</th></tr></thead>
+    <div style="overflow-x:auto"><table class="dt" style="min-width:700px"><thead><tr><th>Invoice</th><th class="r">Labor Billed</th><th class="r">Labor Cost</th><th class="r">Labor Margin</th><th class="r">Materials</th><th class="r">Total</th><th class="r">Collected</th><th class="r">Balance</th><th>Status</th></tr></thead>
     <tbody>${invRows}<tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total</td><td class="r" style="font-weight:700">${fd(labRev)}</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(labPay)}</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(labMargin)}</td><td class="r">${fd(matCost)}</td><td class="r" style="font-weight:700">${fd(c.tBilled)}</td><td class="r" style="color:var(--gn)">${fd(c.tCollected)}</td><td class="r" style="color:${c.tOutstanding>0?'var(--rd)':'var(--gn)'};">${fd(c.tOutstanding)}</td><td></td></tr></tbody>
-    </table></div>`:''}
+    </table></div></div>`:''}
   </div>`;
 }
 
