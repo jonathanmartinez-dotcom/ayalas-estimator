@@ -682,6 +682,59 @@ function rTMInvCreate(j){
   const meRows=unME.length?unME.map(e=>{const on=selME.includes(e.id);return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F3F4F6"><input type="checkbox" style="accent-color:var(--nv);width:15px;height:15px;flex-shrink:0" ${on?'checked':''} onchange="togME('${e.id}',this.checked)"><div style="flex:1"><div style="font-size:13px;font-weight:500">${esc(e.desc)||esc(e.vendor)}&mdash;${e.cat}</div><div style="font-size:11px;color:var(--mu)">${e.dt}&middot;${esc(e.vendor)}</div></div><span class="mono" style="font-size:13px;font-weight:600">${fd(n0(e.amt))}</span></div>`;}).join(''):`<div style="color:var(--fn);font-size:13px;padding:8px 0">No unbilled material entries</div>`;
   return`<div class="sy"><div class="fb" style="margin-bottom:4px"><h2 style="font-size:17px;font-weight:700;color:var(--nv)">New ${type==='progress'?'Progress Invoice':type==='final'?'Final Invoice':'T&M Invoice'}</h2><button class="btn bh sm" onclick="tmInvMode='list';render()">&larr; Cancel</button></div>${type==='progress'?`<div class="card"><div class="ct">Progress Amount <div class="ctl"></div></div><div class="g2"><div class="fg"><label class="fl">Description</label><input class="fi" id="npd" placeholder="e.g. 50% completion milestone" value="${tmNewInv.progDesc||''}"></div><div class="fg"><label class="fl">Invoice Amount ($)</label><input class="fi" type="number" id="npa" step=".01" placeholder="0.00" value="${tmNewInv.progAmt||''}"></div></div></div>`:`<div class="card"><div class="ct">Select Time Entries to Bill <div class="ctl"></div></div>${teRows}<div class="fb" style="margin-top:8px;font-size:13px"><span style="color:var(--mu)">Labor subtotal (with markup)</span><span class="mono" style="font-weight:600">${fd(selLab*(1+n0(j.lMkup)/100))}</span></div></div><div class="card"><div class="ct">Select Material Entries to Bill <div class="ctl"></div></div>${meRows}<div class="fb" style="margin-top:8px;font-size:13px"><span style="color:var(--mu)">Materials subtotal (with markup)</span><span class="mono" style="font-weight:600">${fd(selMat*(1+n0(j.mMkup)/100))}</span></div></div>`}<div class="card"><div class="ct">Invoice Details <div class="ctl"></div></div><div class="g2"><div class="fg"><label class="fl">Invoice Number</label><input class="fi" id="ninum" placeholder="INV-2026-001" value="${tmNewInv.num||''}"></div><div class="fg"><label class="fl">Date Issued</label><input class="fi" type="date" id="nidi" value="${tmNewInv.di||td()}"></div><div class="fg"><label class="fl">Due Date</label><input class="fi" type="date" id="nidd" value="${tmNewInv.dd||addD(td(),30)}"></div><div class="fg"><label class="fl">Notes</label><input class="fi" id="nint" placeholder="Optional" value="${tmNewInv.notes||''}"></div></div></div><div class="card fb"><div><div style="font-size:13px;color:var(--mu)">Invoice Total</div><div style="font-size:22px;font-weight:700;color:var(--nv)">${type==='progress'?f$(n0(tmNewInv.progAmt||0)):f$(selTotal)}</div></div><button class="btn bp" onclick="createInv()">Create Invoice &rarr;</button></div></div>`;
 }
+
+function rPayrollCard(j,inv,forPrint){
+  if(inv.type==='progress'||(inv.teIds||[]).length===0)return'';
+  const te=(j.te||[]).filter(e=>(inv.teIds||[]).includes(e.id));
+  if(!te.length)return'';
+  const workers={};
+  te.forEach(e=>{
+    if(!e.emp)return;
+    if(!workers[e.emp])workers[e.emp]={hrs:0,pay:0,bill:0,entries:[]};
+    workers[e.emp].hrs+=n0(e.hrs);
+    const pr=n0(e.costRate)||n0(e.rate);
+    workers[e.emp].pay+=n0(e.hrs)*pr;
+    workers[e.emp].bill+=n0(e.hrs)*n0(e.rate);
+    workers[e.emp].entries.push(e);
+  });
+  const sorted=Object.entries(workers).sort((a,b)=>b[1].pay-a[1].pay);
+  const totPay=sorted.reduce((s,[,w])=>s+w.pay,0);
+  const totBill=sorted.reduce((s,[,w])=>s+w.bill,0);
+  const hasPayRates=te.some(e=>n0(e.costRate)>0&&n0(e.costRate)!==n0(e.rate));
+  const rows=sorted.map(([nm,w])=>{
+    const payRate=w.hrs>0?w.pay/w.hrs:0;
+    const billRate=w.hrs>0?w.bill/w.hrs:0;
+    return`<tr>
+      <td style="font-weight:600">${esc(nm)}</td>
+      <td class="r">${w.hrs.toFixed(2)}</td>
+      <td class="r">${fd(payRate)}/hr${billRate!==payRate?`<div style="font-size:10px;color:var(--mu)">${fd(billRate)}/hr billed</div>`:''}  </td>
+      <td class="r" style="font-weight:700;color:${forPrint?'#1B2A4A':'var(--rd)'}; font-size:14px">${fd(w.pay)}</td>
+    </tr>`;
+  }).join('');
+  if(forPrint){
+    return`<div style="border:2px dashed #9CA3AF;border-radius:8px;padding:16px;margin-top:24px;background:#F9FAFB;page-break-inside:avoid">
+      <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">&#128274; Internal Payroll Summary &mdash; Do Not Send to Client</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="border-bottom:2px solid #E5E7EB">${['Worker','Hours','Pay Rate','Amount Owed'].map(h=>`<th style="padding:6px 8px;text-align:${h==='Worker'?'left':'right'};font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px">${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows}<tr style="border-top:2px solid #E5E7EB"><td style="padding:6px 8px;font-weight:700">Total Payroll — This Invoice</td><td style="padding:6px 8px;text-align:right;font-weight:700">${te.reduce((s,e)=>s+n0(e.hrs),0).toFixed(2)}h</td><td></td><td style="padding:6px 8px;text-align:right;font-weight:700;font-size:15px;color:#1B2A4A">${fd(totPay)}</td></tr></tbody>
+      </table>
+      ${!hasPayRates?`<div style="margin-top:8px;font-size:11px;color:#92400E">&#9888; Pay Rates not set on some entries &mdash; amounts shown reflect billing rates.</div>`:''}
+    </div>`;
+  }
+  return`<div class="card" style="border-color:#FCD34D;background:#FFFBEB">
+    <div class="ct" style="color:#92400E">&#128274; Payroll &mdash; This Invoice <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:#B45309;margin-left:6px">internal only</span><div class="ctl"></div></div>
+    ${!hasPayRates?`<div style="background:#FEF9C3;border:1px solid #FDE047;border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:12px;color:#713F12">&#9888; Pay Rates not set on some entries &mdash; showing billing rates as fallback. Set Pay Rates on the Time tab for accurate payroll.</div>`:''}
+    <table class="dt"><thead><tr><th>Worker</th><th class="r">Hours</th><th class="r">Pay Rate</th><th class="r" style="color:#92400E">Amount Owed</th></tr></thead>
+    <tbody>${rows}<tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total Payroll</td><td class="r" style="font-weight:700">${te.reduce((s,e)=>s+n0(e.hrs),0).toFixed(2)}h</td><td></td><td class="r" style="font-weight:700;font-size:16px;color:var(--rd)">${fd(totPay)}</td></tr></tbody>
+    </table>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">
+      <div style="text-align:center;background:white;border-radius:6px;padding:8px"><div style="font-size:11px;color:#B45309">Total Payroll</div><div style="font-weight:700;font-size:15px;color:var(--rd)">${fd(totPay)}</div></div>
+      <div style="text-align:center;background:white;border-radius:6px;padding:8px"><div style="font-size:11px;color:#B45309">Labor Billed</div><div style="font-weight:700;font-size:15px;color:var(--nv)">${fd(totBill)}</div></div>
+      <div style="text-align:center;background:white;border-radius:6px;padding:8px"><div style="font-size:11px;color:#166534">Labor Margin</div><div style="font-weight:700;font-size:15px;color:var(--gn)">${fd(totBill-totPay)}</div></div>
+    </div>
+  </div>`;
+}
+
 function rTMInvDetail(j,inv){
   const ci=calcInv(j,inv),sc={draft:'b-dr',sent:'b-sn',partial:'b-re',paid:'b-ac'};
   const teRows=(j.te||[]).filter(e=>(inv.teIds||[]).includes(e.id)).map((e,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${e.dt}</td><td>${esc(e.emp)}</td><td>${esc(e.desc)}</td><td class="r">${n0(e.hrs).toFixed(2)}</td><td class="r">${fd(n0(e.rate))}/hr</td><td class="r">${fd(n0(e.hrs)*n0(e.rate))}</td></tr>`).join('');
@@ -693,6 +746,7 @@ function rTMInvDetail(j,inv){
   ${teRows?`<div class="card"><div class="ct">Time Entries Billed <div class="ctl"></div></div><table class="dt"><thead><tr><th>Date</th><th>Employee</th><th>Description</th><th class="r">Hrs</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${teRows}${n0(j.lMkup)>0?`<tr><td colspan="5" style="color:var(--mu)">Labor Markup (${j.lMkup}%)</td><td class="r">${fd(ci.laborCost*n0(j.lMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="5" style="font-weight:600">Labor Total</td><td class="r" style="font-weight:700">${fd(ci.laborCost*(1+n0(j.lMkup)/100))}</td></tr></tbody></table></div>`:``}
   ${meRows?`<div class="card"><div class="ct">Materials Billed <div class="ctl"></div></div><table class="dt"><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th class="r">Amount</th></tr></thead><tbody>${meRows}${n0(j.mMkup)>0?`<tr><td colspan="4" style="color:var(--mu)">Materials Markup (${j.mMkup}%)</td><td class="r">${fd(ci.matCost*n0(j.mMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:600">Materials Total</td><td class="r" style="font-weight:700">${fd(ci.matCost*(1+n0(j.mMkup)/100))}</td></tr></tbody></table></div>`:``}
   <div class="card"><div class="ct">Payments Applied <div class="ctl"></div></div>${payRows?`<table class="dt" style="margin-bottom:12px"><thead><tr><th>Date</th><th>Method</th><th>Reference #</th><th>Notes</th><th class="r">Amount</th><th></th></tr></thead><tbody>${payRows}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:600;color:var(--gn)">Total Collected</td><td class="r" style="font-weight:700;color:var(--gn)">${f$(ci.paid)}</td><td></td></tr></tbody></table>`:`<div style="color:var(--fn);font-size:13px;margin-bottom:12px">No payments recorded yet</div>`}<div class="fb" style="padding:12px 16px;border-radius:8px;background:${ci.balance>0?'#FEF2F2':'#F0FDF4'}"><span style="font-weight:700;font-size:15px">${ci.balance>0?'Balance Due':'Paid in Full &check;'}</span><span class="mono" style="font-weight:700;font-size:18px;color:${ci.balance>0?'var(--rd)':'var(--gn)'}">${ci.balance>0?f$(ci.balance):'$0'}</span></div>${ci.balance>0?`<button class="btn bg" style="margin-top:12px" onclick="startPay('${inv.id}')">+ Record Payment</button>`:``}</div>
+  ${rPayrollCard(j,inv,false)}
   </div>`;
 }
 function rTMPayFrm(j,inv){
@@ -860,7 +914,7 @@ function rTMInvPrint2(j,inv){
         <div style="margin-top:8px;font-size:12px;color:var(--mu)"><strong>Questions?</strong> ${CO.p} &middot; ${CO.e}</div>
         <div style="margin-top:4px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days.</div>
       </div></div>
-    <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
+    ${rPayrollCard(j,inv,true)}<div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
   </div></div>`;
 }
 function rTMEditor(j){
