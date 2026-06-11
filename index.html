@@ -224,13 +224,18 @@ const nCI=()=>({id:uid(),name:'',wSq:'',cSq:'',tLF:'',drs:0,wT:0,sSq:'',cts:2,s:
 const nCE=()=>({id:uid(),name:'',fSq:'',cmSq:'',mSq:'',tLF:'',sSq:'',faLF:'',aSq:'',sD:0,oD:0,cts:2,s:{fac:true,cmu:false,met:false,trim:true,sof:false,fas:false,awn:false},pr:false,note:''});
 const nFR=()=>({id:uid(),desc:'',price:''});
 function nArea(t){return t==='ri'?nRI():t==='re'?nRE():t==='ci'?nCI():nCE();}
-function mkE(t,m){const j=JT[t],d=td();return{id:uid(),cr:d,st:'draft',jt:t,md:m||'dt',pn:'',di:d,vu:addD(d,30),cl:{n:'',a:'',p:'',e:''},sd:'',dur:j.d,areas:[nArea(t)],mat:JSON.parse(JSON.stringify(PAINT[t])),lab:{...LAB[t]},set:{gm:j.isCom?45:42,cov:350,tc:50},fi:[nFR()],fc:{mPct:25,lPct:45,oPct:5},oh:0,ci:[],disc:0,aO:'',nt:'',ph:[]};}
+function mkE(t,m){const j=JT[t],d=td();return{id:uid(),cr:d,st:'draft',jt:t,md:m||'dt',pn:'',di:d,vu:addD(d,30),cl:{n:'',a:'',p:'',e:''},sd:'',dur:j.d,areas:[nArea(t)],mat:JSON.parse(JSON.stringify(PAINT[t])),lab:{...LAB[t]},set:{gm:j.isCom?45:42,cov:350,tc:50},fi:[nFR()],fc:{mPct:25,lPct:45,oPct:5},oh:0,ci:[],disc:0,aO:'',nt:'',ph:[],addOns:[],pmts:[]};}
 function cRI(e){const{areas:AR,mat:M,lab:L,set:S,disc:DC}=e;const CV=S.cov||350,TC=S.tc||50;let tW=0,tC=0,tT=0,tD=0,wG=0,cG=0,tG=0,pG=0,mt=0,lb=0;const abs=AR.map(a=>{const l=n0(a.len),w=n0(a.wid),h=n0(a.hgt),D=i0(a.drs),Wi=i0(a.win),co=i0(a.cts)||2;const ws=a.s.walls?Math.max(0,2*(l+w)*h-D*21-Wi*12):0,cs=a.s.ceiling?l*w:0,tl=a.s.trim?2*(l+w):0;const ag=(ws*co)/CV,bg=(cs*co)/CV,cg=(tl*co)/TC,pg=a.pr?(ws+cs)/CV:0;const am=ag*M.walls.cpg+bg*M.ceiling.cpg+cg*M.trim.cpg+pg*M.primer.cpg;const al=ws*L.wPs+cs*L.cPs+tl*L.tPl+D*L.dPu+(ws+cs)*L.pPs;tW+=ws;tC+=cs;tT+=tl;tD+=D;wG+=ag;cG+=bg;tG+=cg;pG+=pg;mt+=am;lb+=al;return{id:a.id,nm:a.name||'(Unnamed)',ws,cs,tl,D,mc:am,lc:al,tc:am+al};});const tc=mt+lb,gm=S.gm/100,rw=tc/(1-gm),di=n0(DC),sl=rw-di,ag2=sl>0?(1-tc/sl)*100:0;return{tW,tC,tT,tD,wG,cG,tG,pG,mt,lb,tc,rw,di,sl,ag:ag2,areas:abs.map(a=>({...a,sh:tc>0?(a.tc/tc)*sl:0}))};}
 function cRE(e){const{areas:AR,mat:M,lab:L,set:S,disc:DC}=e;const CV=S.cov||350,TC=S.tc||50;let tB=0,tT=0,tS=0,tF=0,tE=0,tG2=0,bG=0,tTG=0,sG=0,pG=0,mt=0,lb=0;const abs=AR.map(a=>{const bo=a.s.body?n0(a.bSq):0,tr=a.s.trim?n0(a.tLF):0,so=a.s.sof?n0(a.sSq):0,fa=a.s.fas?n0(a.fLF):0,ed=i0(a.eD),gd=i0(a.gD),co=i0(a.cts)||2;const bg=(bo*co)/CV,tg=(tr*co)/TC,sg=(so*co)/CV,fg=(fa*co)/TC,pg=a.pr?(bo+so)/CV:0;const am=bg*M.body.cpg+tg*M.trim.cpg+sg*M.soffits.cpg+fg*M.trim.cpg+pg*M.primer.cpg;const al=bo*L.bPs+tr*L.tPl+so*L.sPs+fa*L.fPl+ed*L.edPu+gd*L.gdPu+(bo+so)*L.pPs;tB+=bo;tT+=tr;tS+=so;tF+=fa;tE+=ed;tG2+=gd;bG+=bg;tTG+=tg;sG+=sg;pG+=pg;mt+=am;lb+=al;return{id:a.id,nm:a.name||'(Unnamed)',bo,tr,so,fa,mc:am,lc:al,tc:am+al};});const tc=mt+lb,gm=S.gm/100,rw=tc/(1-gm),di=n0(DC),sl=rw-di,ag=sl>0?(1-tc/sl)*100:0;return{tB,tT,tS,tF,tE,tG2,bG,tTG,sG,pG,mt,lb,tc,rw,di,sl,ag,areas:abs.map(a=>({...a,sh:tc>0?(a.tc/tc)*sl:0}))};}
 function cCI(e){const{areas:AR,mat:M,lab:L,set:S,disc:DC}=e;const CV=S.cov||350,TC=S.tc||50;let tW=0,tC=0,tT=0,tD=0,tWT=0,tSP=0,wG=0,cG=0,tG=0,sG=0,pG=0,mt=0,lb=0;const abs=AR.map(a=>{const ws=a.s.walls?n0(a.wSq):0,cs=a.s.ceil?n0(a.cSq):0,tl=a.s.trim?n0(a.tLF):0,D=a.s.doors?i0(a.drs):0,wt=a.s.wTrim?i0(a.wT):0,sp=a.s.spec?n0(a.sSq):0,co=i0(a.cts)||2;const ag=(ws*co)/CV,bg=(cs*co)/CV,cg=(tl*co)/TC,dg=(sp*co)/CV,pg=a.pr?(ws+cs)/CV:0;const am=ag*M.walls.cpg+bg*M.ceiling.cpg+cg*M.trim.cpg+dg*M.spec.cpg+pg*M.primer.cpg;const al=ws*L.wPs+cs*L.cPs+tl*L.tPl+D*L.dPu+wt*L.wtPu+sp*L.sPe+(ws+cs)*L.pPs;tW+=ws;tC+=cs;tT+=tl;tD+=D;tWT+=wt;tSP+=sp;wG+=ag;cG+=bg;tG+=cg;sG+=dg;pG+=pg;mt+=am;lb+=al;return{id:a.id,nm:a.name||'(Unnamed)',ws,cs,tl,D,wt,sp,mc:am,lc:al,tc:am+al};});const ov=(mt+lb)*(n0(e.oh)/100),cc=(e.ci||[]).reduce((s,i)=>s+n0(i.cost),0);const tc=mt+lb+ov+cc,gm=S.gm/100,rw=tc/(1-gm),di=n0(DC),sl=rw-di,ag=sl>0?(1-tc/sl)*100:0;return{tW,tC,tT,tD,tWT,tSP,wG,cG,tG,sG,pG,mt,lb,ov,cc,tc,rw,di,sl,ag,areas:abs.map(a=>({...a,sh:tc>0?(a.tc/tc)*sl:0}))};}
 function cCE(e){const{areas:AR,mat:M,lab:L,set:S,disc:DC}=e;const CV=S.cov||350,TC=S.tc||50;let tFa=0,tCm=0,tMe=0,tTr=0,tSo=0,tFs=0,tAw=0,tSD=0,tOH=0,fG=0,cmG=0,meG=0,trG=0,soG=0,awG=0,pG=0,mt=0,lb=0;const abs=AR.map(a=>{const fa=a.s.fac?n0(a.fSq):0,cm=a.s.cmu?n0(a.cmSq):0,me=a.s.met?n0(a.mSq):0,tr=a.s.trim?n0(a.tLF):0,so=a.s.sof?n0(a.sSq):0,fs=a.s.fas?n0(a.faLF):0,aw=a.s.awn?n0(a.aSq):0,sd=i0(a.sD),oh=i0(a.oD),co=i0(a.cts)||2;const ag=(fa*co)/CV,bg=(cm*co)/CV,cg=(me*co)/CV,dg=(tr*co)/TC,eg=(so*co)/CV,fg2=(fs*co)/TC,gg=(aw*co)/CV,hg=a.pr?(fa+cm+so)/CV:0;const am=ag*M.facade.cpg+bg*M.facade.cpg+cg*M.spec.cpg+dg*M.trim.cpg+eg*M.facade.cpg+fg2*M.trim.cpg+gg*M.spec.cpg+hg*M.primer.cpg;const al=fa*L.faPs+cm*L.cmPs+me*L.mePs+tr*L.tPl+so*L.sPs+fs*L.fPl+aw*L.aPe+sd*L.sdPu+oh*L.ohPu+(fa+cm+so)*L.pPs;tFa+=fa;tCm+=cm;tMe+=me;tTr+=tr;tSo+=so;tFs+=fs;tAw+=aw;tSD+=sd;tOH+=oh;fG+=ag;cmG+=bg;meG+=cg;trG+=dg;soG+=eg;awG+=gg;pG+=hg;mt+=am;lb+=al;return{id:a.id,nm:a.name||'(Unnamed)',fa,cm,me,tr,so,fs,aw,sd,oh,mc:am,lc:al,tc:am+al};});const ov=(mt+lb)*(n0(e.oh)/100),cc=(e.ci||[]).reduce((s,i)=>s+n0(i.cost),0);const tc=mt+lb+ov+cc,gm=S.gm/100,rw=tc/(1-gm),di=n0(DC),sl=rw-di,ag=sl>0?(1-tc/sl)*100:0;return{tFa,tCm,tMe,tTr,tSo,tFs,tAw,tSD,tOH,fG,cmG,meG,trG,soG,awG,pG,mt,lb,ov,cc,tc,rw,di,sl,ag,areas:abs.map(a=>({...a,sh:tc>0?(a.tc/tc)*sl:0}))};}
 function cFR(e){const items=e.fi||[];const total=items.reduce((s,i)=>s+n0(i.price),0);const di=n0(e.disc),sl=total-di;const{mPct:mp=25,lPct:lp=45,oPct:op=5}=e.fc||{};const mt=sl*(mp/100),lb=sl*(lp/100),ov=sl*(op/100);const tc=mt+lb+ov,pf=sl-tc,ag=sl>0?(pf/sl)*100:0;return{mode:'fr',items,total,di,sl,mt,lb,ov,tc,pf,ag,areas:items.map(i=>({id:i.id,nm:i.desc||'(Unnamed)',sh:n0(i.price)}))}}
-function cEst(e){if(e.md==='fr')return cFR(e);return e.jt==='ri'?cRI(e):e.jt==='re'?cRE(e):e.jt==='ci'?cCI(e):cCE(e);}
+
+function mkAddOn(){return{id:uid(),desc:'',price:'',inc:false,notes:''};}
+function mkEstPmt(){return{id:uid(),dt:td(),amt:'',method:'check',type:'deposit',ref:'',notes:''};}
+function calcEstPmts(e){const c=cEst(e),pmts=e.pmts||[];const paid=pmts.reduce((s,p)=>s+n0(p.amt),0);const bal=Math.max(0,c.sl-paid);const st=bal<=0&&c.sl>0?'paid':paid>0?'partial':'unpaid';return{total:c.sl,paid,bal,st};}
+
+function cEst(e){let c=e.md==='fr'?cFR(e):e.jt==='ri'?cRI(e):e.jt==='re'?cRE(e):e.jt==='ci'?cCI(e):cCE(e);const aoT=(e.addOns||[]).filter(a=>a.inc).reduce((s,a)=>s+n0(a.price),0);if(aoT>0){c={...c,sl:c.sl+aoT,aoTotal:aoT};c.ag=c.sl>0?((c.sl-c.tc)/c.sl)*100:0;}else c={...c,aoTotal:0};return c;}
 const SURL='https://uyomunqueyjohlrgvhvx.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5b211bnF1ZXlqb2hscmd2aHZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDU5MDEsImV4cCI6MjA5NDc4MTkwMX0.YLm57KZm63oyZsDr47hMAm_ATwA3D3R20RdOX50QF7M';
 const SH={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
@@ -332,7 +337,7 @@ let stats,paints,aHdr,aRows;if(e.jt==='ri'){stats=`<div class="sg" style="grid-t
 return`<div class="sy">${stats}<div class="card"><div class="ct">Paint Quantities <div class="ctl"></div></div><table class="dt"><thead><tr><th>Surface</th><th>Product</th><th class="r">Gallons</th><th class="r">Mat. Cost</th></tr></thead><tbody>${paints.filter(p=>p.g>.01).map(p=>`<tr><td><strong>${p.s}</strong></td><td style="color:var(--mu)">${esc(p.p.pr)}</td><td class="r">${p.g.toFixed(1)}</td><td class="r">${fd(p.g*p.p.cpg)}</td></tr>`).join('')}</tbody></table></div><div class="card"><div class="ct">${aHdr} Breakdown <div class="ctl"></div></div><table class="dt"><thead><tr><th>${aHdr}</th><th>Surfaces</th><th class="r">Material</th><th class="r">Labor</th><th class="r">Total Cost</th><th class="r">Client Price</th></tr></thead><tbody>${(aRows||[]).map(a=>`<tr><td><strong>${esc(a.n)}</strong></td><td style="font-size:11px;color:var(--mu)">${a.d}</td><td class="r">${fd(a.mc)}</td><td class="r">${fd(a.lc)}</td><td class="r">${fd(a.tc)}</td><td class="r"><strong>${f$(a.sh)}</strong></td></tr>`).join('')}${(c.ov>0)?`<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="color:var(--mu);font-size:12px">Overhead (${e.oh}%)</td><td class="r">${fd(c.ov)}</td><td></td></tr>`:''}${(c.cc>0)?`<tr><td colspan="4" style="color:var(--mu);font-size:12px">Custom Items</td><td class="r">${fd(c.cc)}</td><td></td></tr>`:''}
 </tbody></table></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="card"><div class="ct">Cost Breakdown <div class="ctl"></div></div><div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Materials</span><span class="mono">${fd(c.mt)}</span></div><div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Labor</span><span class="mono">${fd(c.lb)}</span></div>${c.ov>0?`<div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Overhead (${e.oh}%)</span><span class="mono">${fd(c.ov)}</span></div>`:''}${c.cc>0?`<div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Custom Items</span><span class="mono">${fd(c.cc)}</span></div>`:''}<div class="dv"></div><div class="fb"><span style="font-weight:700">Total Cost</span><span class="mono" style="font-weight:700">${fd(c.tc)}</span></div></div><div class="card"><div class="ct">Margin <div class="ctl"></div></div><div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Target GM</span><span>${e.set.gm}%</span></div><div class="fb" style="font-size:13px;margin-top:6px"><span style="color:var(--mu)">Raw Sell</span><span class="mono">${f$(c.rw)}</span></div>${c.di>0?`<div class="fb" style="font-size:13px;margin-top:6px;color:var(--gn)"><span>Discount</span><span>(${f$(c.di)})</span></div>`:''}<div class="dv"></div><div class="fb"><span style="font-weight:700">Client Pays</span><span class="mono" style="font-weight:700;color:var(--nv)">${f$(c.sl)}</span></div><div class="fb" style="margin-top:8px"><span style="color:var(--mu);font-size:12px">Actual GM</span><span class="${ok?'tg':'tr'} mono">${pct(c.ag)}</span></div></div></div></div>`;}
 function rPh(e){const ph=e.ph||[];const tags={site:'📍 Site',before:'📸 Before',during:'🖌 During',after:'✅ After',cond:'⚠️ Condition'};const thumbs=ph.map((p,i)=>`<div class="pt ${p.inc?'sel':''}"><img src="${imgSrc(p)}" alt="${esc(p.nm)}"><div class="po"><select style="background:transparent;border:none;color:#fff;font-size:10px;cursor:pointer;font-family:inherit" onchange="uPh(${i},'tag',this.value)">${Object.entries(tags).map(([v,l])=>`<option value="${v}" ${p.tag===v?'selected':''}>${l}</option>`).join('')}</select><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px"><input type="checkbox" ${p.inc?'checked':''} onchange="uPh(${i},'inc',this.checked)" style="accent-color:var(--gd)"> In proposal</label></div><button onclick="dPh(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">✕</button></div>`).join('');return`<div class="sy"><div class="card"><div class="ct">Job Site Photos <span style="font-size:11px;color:var(--mu);font-weight:400;text-transform:none;letter-spacing:0"> — tag photos and optionally include in client proposal</span><div class="ctl"></div></div>${ph.length?`<div class="pg" style="margin-bottom:14px">${thumbs}</div>`:`<div style="color:var(--fn);font-size:13px;padding:8px 0 16px">No photos uploaded yet.</div>`}<label class="btn bp sm" style="cursor:pointer">📁 Upload Photos<input type="file" accept="image/*" multiple style="display:none" onchange="uploadPh(this)"></label>${ph.filter(p=>p.inc).length?`<div style="margin-top:10px;font-size:12px;color:var(--gn)">${ph.filter(p=>p.inc).length} photo(s) will appear in the proposal</div>`:''}</div></div>`;}
-function rEd(e){const isFR=e.md==='fr';const tabs=isFR?[{id:'cl',l:'Client & Project'},{id:'fr',l:'Pricing & Scope'},{id:'mt',l:'Materials'},{id:'ph',l:`📷 Photos${(e.ph||[]).length?' ('+e.ph.length+')':''}`},{id:'sm',l:'Internal Summary'}]:[{id:'cl',l:'Client & Project'},{id:'ar',l:e.jt==='ri'?'Rooms':'Zones / Scope'},{id:'mt',l:'Materials'},{id:'pr2',l:'Pricing & Margin'},{id:'ph',l:`📷 Photos${(e.ph||[]).length?' ('+e.ph.length+')':''}`},{id:'sm',l:'Cost Summary'},...(e.st==='accepted'?[{id:'act',l:'📋 Actuals'}]:[])];  const vt=tabs.map(t=>t.id);if(!vt.includes(ctab))ctab=tabs[0].id;const tb=`<div class="tabbar np">${tabs.map(t=>`<button class="tb ${ctab===t.id?'on':''}" onclick="sw('${t.id}')">${t.l}</button>`).join('')}</div>`;let co='';if(ctab==='cl')co=rCL(e);else if(ctab==='ar')co=rAreas(e);else if(ctab==='fr')co=rFR(e);else if(ctab==='mt')co=rMat(e);else if(ctab==='pr2')co=rPr2(e);else if(ctab==='ph')co=rPh(e);else if(ctab==='sm')co=rSum(e);else if(ctab==='act')co=rActuals(e);return rTB(e)+tb+co;}
+function rEd(e){const isFR=e.md==='fr';const tabs=isFR?[{id:'cl',l:'Client & Project'},{id:'fr',l:'Pricing & Scope'},{id:'mt',l:'Materials'},{id:'ph',l:`📷 Photos${(e.ph||[]).length?' ('+e.ph.length+')':''}`},{id:'sm',l:'Internal Summary'}]:[{id:'cl',l:'Client & Project'},{id:'ar',l:e.jt==='ri'?'Rooms':'Zones / Scope'},{id:'mt',l:'Materials'},{id:'pr2',l:'Pricing & Margin'},{id:'ph',l:`📷 Photos${(e.ph||[]).length?' ('+e.ph.length+')':''}`},{id:'sm',l:'Cost Summary'},{id:'addons',l:'+ Add-ons'+(((e.addOns||[]).length)>0?' ('+((e.addOns||[]).length)+')':'')},{id:'pmts',l:'💳 Payments'+((e.pmts||[]).length>0?' ✓':'')}, ...(e.st==='accepted'?[{id:'act',l:'📋 Actuals'}]:[])];  const vt=tabs.map(t=>t.id);if(!vt.includes(ctab))ctab=tabs[0].id;const tb=`<div class="tabbar np">${tabs.map(t=>`<button class="tb ${ctab===t.id?'on':''}" onclick="sw('${t.id}')">${t.l}</button>`).join('')}</div>`;let co='';if(ctab==='cl')co=rCL(e);else if(ctab==='ar')co=rAreas(e);else if(ctab==='fr')co=rFR(e);else if(ctab==='mt')co=rMat(e);else if(ctab==='pr2')co=rPr2(e);else if(ctab==='ph')co=rPh(e);else if(ctab==='sm')co=rSum(e);else if(ctab==='addons')co=rAddOns(e);else if(ctab==='pmts')co=rEstInvTab(e);else if(ctab==='einv')return rEstInvPrint(e);else if(ctab==='act')co=rActuals(e);return rTB(e)+tb+co;}
 function rProp(e){const c=cEst(e),j=JT[e.jt],isCom=j.isCom,isExt=j.isExt,M=e.mat;const hp=(e.ph||[]).filter(p=>p.inc);const we=appS.we||'10 years',wi=appS.wi||'5 years',wc=appS.wc||'5 years';const hasPr=e.areas.some(a=>a.pr);
 const logoH=logoD?`<img src="${logoD}" class="pln" alt="${CO.n}">`:`<div></div>`;
 let matR=[];if(e.jt==='ri')matR=[{i:'Walls',...M.walls},{i:'Ceilings',...M.ceiling},{i:'Trim & Doors',...M.trim},...(hasPr?[{i:'Primer',...M.primer}]:[])];else if(e.jt==='re')matR=[{i:'Body / Siding',...M.body},{i:'Trim, Fascia & Shutters',...M.trim},...(e.areas.some(a=>a.s&&a.s.sof)?[{i:'Soffits',...M.soffits}]:[]),...(hasPr?[{i:'Primer',...M.primer}]:[])];else if(e.jt==='ci')matR=[{i:'Walls',...M.walls},{i:'Ceilings',...M.ceiling},{i:'Trim & Doors',...M.trim},...(e.areas.some(a=>a.s&&a.s.spec)?[{i:'Specialty Surfaces',...M.spec}]:[]),...(hasPr?[{i:'Primer',...M.primer}]:[])];else matR=[{i:'Wall / Facade (+ CMU)',...M.facade},{i:'Trim & Fascia',...M.trim},...(e.areas.some(a=>a.s&&(a.s.met||a.s.awn))?[{i:'Specialty / Awning Coating',...M.spec}]:[]),...(hasPr?[{i:'Primer / Block Filler',...M.primer}]:[])];
@@ -1129,6 +1134,134 @@ function rSVGBar(weeks,maxV,H,W){
 }
 function rHBar(items,maxV,color){
   return items.map(it=>{const w=maxV>0?Math.max(2,(it.v/maxV)*100):0;return`<div style="margin-bottom:10px"><div class="fb" style="font-size:13px;margin-bottom:4px"><span>${it.l}</span><span class="mono" style="font-weight:600">${it.disp}</span></div><div style="background:#F3F4F6;border-radius:4px;height:10px;overflow:hidden"><div style="background:${color};width:${w}%;height:100%;border-radius:4px;transition:width .4s"></div></div></div>`;}).join('');
+}
+
+
+function addAddOn(){const e=getCur();if(!e)return;e.addOns=[...(e.addOns||[]),mkAddOn()];sv();render();}
+function delAddOn(i){const e=getCur();if(!e)return;e.addOns=(e.addOns||[]).filter((_,idx)=>idx!==i);sv();render();}
+function uAddOn(i,k,v){const e=getCur();if(!e)return;e.addOns=(e.addOns||[]).map((a,idx)=>idx===i?{...a,[k]:v}:a);sv();}
+function togAddOn(i){const e=getCur();if(!e)return;e.addOns=(e.addOns||[]).map((a,idx)=>idx===i?{...a,inc:!a.inc}:a);sv();render();}
+function addEstPmt(){const e=getCur();if(!e)return;e.pmts=[...(e.pmts||[]),mkEstPmt()];sv();render();}
+function delEstPmt(i){const e=getCur();if(!e)return;e.pmts=(e.pmts||[]).filter((_,idx)=>idx!==i);sv();render();}
+function uEstPmt(i,k,v){const e=getCur();if(!e)return;e.pmts=(e.pmts||[]).map((p,idx)=>idx===i?{...p,[k]:v}:p);sv();}
+
+function rAddOns(e){
+  const aos=e.addOns||[];
+  const c=cEst(e);
+  const incTotal=aos.filter(a=>a.inc).reduce((s,a)=>s+n0(a.price),0);
+  const rows=aos.map((a,i)=>`<div style="display:grid;grid-template-columns:1fr 110px auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)">
+    <div>
+      <input class="fi" style="padding:5px 8px;font-size:13px;margin-bottom:4px" value="${esc(a.desc)}" placeholder="Add-on description (e.g. Garage floor epoxy)" oninput="uAddOn(${i},'desc',this.value)">
+      <input class="fi" style="padding:4px 8px;font-size:12px;color:var(--mu)" value="${esc(a.notes||'')}" placeholder="Optional notes" oninput="uAddOn(${i},'notes',this.value)">
+    </div>
+    <input class="fi" style="padding:5px 8px;font-size:13px;font-family:'DM Mono',monospace" type="number" step=".01" value="${a.price||''}" placeholder="$ price" oninput="uAddOn(${i},'price',this.value)">
+    <button onclick="togAddOn(${i})" style="padding:6px 12px;border-radius:6px;border:2px solid ${a.inc?'var(--gn)':'var(--bd)'};background:${a.inc?'#F0FDF4':'white'};color:${a.inc?'var(--gn)':'var(--mu)'};font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit">${a.inc?'✓ Included':'Optional'}</button>
+    <button class="btn bd2 xs" onclick="delAddOn(${i})">&#10005;</button>
+  </div>`).join('');
+  return`<div class="sy">
+    <div class="card"><div class="ct">Add-Ons & Optional Items <div class="ctl"></div></div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:14px">Toggle <strong>Included</strong> to add to the estimate total and show in the proposal. <strong>Optional</strong> items appear in the proposal as upsell items but don't affect the price.</div>
+      ${aos.length?`<div style="display:grid;grid-template-columns:1fr 110px auto auto;gap:8px;padding:4px 0;margin-bottom:4px">${['Description','Price','Status',''].map(h=>`<div class="fl">${h}</div>`).join('')}</div>`:``}
+      <div>${rows}</div>
+      <button class="btn bh sm" style="margin-top:10px" onclick="addAddOn()">+ Add Item</button>
+      ${incTotal>0?`<div class="dv"></div><div class="fb"><span style="font-weight:600">Included Add-ons</span><span class="mono" style="font-weight:700;color:var(--nv);font-size:16px">${f$(incTotal)}</span></div>`:``}
+    </div>
+    ${aos.length?`<div class="card"><div class="ct">Summary <div class="ctl"></div></div>
+      <div class="g2">
+        <div>
+          ${aos.filter(a=>a.inc).length?`<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Included in Total</div>${aos.filter(a=>a.inc).map(a=>`<div class="fb" style="font-size:13px;padding:4px 0"><span>${esc(a.desc||'(no description)')}</span><span class="mono" style="font-weight:600;color:var(--nv)">${f$(n0(a.price))}</span></div>`).join('')}</div>`:''}
+          ${aos.filter(a=>!a.inc).length?`<div><div style="font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Optional (not in total)</div>${aos.filter(a=>!a.inc).map(a=>`<div class="fb" style="font-size:13px;padding:4px 0;color:var(--mu)"><span>${esc(a.desc||'(no description)')}</span><span class="mono">${f$(n0(a.price))}</span></div>`).join('')}</div>`:''}
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:14px">
+          <div class="fb" style="font-size:13px;padding:4px 0"><span style="color:var(--mu)">Base Estimate</span><span class="mono">${f$(c.sl-incTotal)}</span></div>
+          ${incTotal>0?`<div class="fb" style="font-size:13px;padding:4px 0"><span style="color:var(--gn)">+ Add-ons included</span><span class="mono" style="color:var(--gn)">${f$(incTotal)}</span></div>`:''}
+          <div class="dv"></div>
+          <div class="fb"><span style="font-weight:700">Total with Add-ons</span><span class="mono" style="font-weight:700;font-size:16px;color:var(--nv)">${f$(c.sl)}</span></div>
+        </div>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+
+function rEstInvTab(e){
+  const cp=calcEstPmts(e);
+  const pmts=e.pmts||[];
+  const sc={paid:'b-ac',partial:'b-re',unpaid:'b-dr'};
+  const stLabel={paid:'Paid in Full',partial:'Partially Paid',unpaid:'Unpaid'};
+  const pTypes=['deposit','progress','final'];
+  const pRows=pmts.map((p,i)=>`<tr>
+    <td><input class="fi" style="padding:4px 7px;font-size:12px" type="date" value="${p.dt}" oninput="uEstPmt(${i},'dt',this.value)"></td>
+    <td><select class="fs" style="padding:4px 7px;font-size:12px" onchange="uEstPmt(${i},'type',this.value)">${pTypes.map(t=>`<option value="${t}" ${p.type===t?'selected':''}>${t[0].toUpperCase()+t.slice(1)}</option>`).join('')}</select></td>
+    <td><select class="fs" style="padding:4px 7px;font-size:12px" onchange="uEstPmt(${i},'method',this.value)"><option value="check" ${p.method==='check'?'selected':''}>Check</option><option value="zelle" ${p.method==='zelle'?'selected':''}>Zelle</option><option value="cash" ${p.method==='cash'?'selected':''}>Cash</option><option value="card" ${p.method==='card'?'selected':''}>Card</option><option value="ach" ${p.method==='ach'?'selected':''}>ACH</option></select></td>
+    <td><input class="fi" style="padding:4px 7px;font-size:12px" value="${esc(p.ref||'')}" placeholder="Check # / ref" oninput="uEstPmt(${i},'ref',this.value)"></td>
+    <td class="r"><input class="fi" style="padding:4px 7px;font-size:12px;font-family:'DM Mono',monospace;text-align:right" type="number" step=".01" value="${p.amt||''}" placeholder="0.00" oninput="uEstPmt(${i},'amt',this.value)"></td>
+    <td><button class="btn bd2 xs" onclick="delEstPmt(${i})">&#10005;</button></td>
+  </tr>`).join('');
+  return`<div class="sy">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div class="sc"><div class="sv">${f$(cp.total)}</div><div class="sl">Contract Amount</div></div>
+      <div class="sc"><div class="sv" style="color:var(--gn)">${f$(cp.paid)}</div><div class="sl">Total Collected</div></div>
+      <div class="sc" style="${cp.bal>0?'border-color:var(--rd)':'border-color:var(--gd);background:var(--gl)'}"><div class="sv" style="color:${cp.bal>0?'var(--rd)':'var(--gn)'}">${f$(cp.bal)}</div><div class="sl">Balance Due &nbsp;<span class="bdg ${sc[cp.st]}">${stLabel[cp.st]}</span></div></div>
+    </div>
+    <div class="card"><div class="ct">Payment History <div class="ctl"></div></div>
+      ${pmts.length?`<table class="dt"><thead><tr><th>Date</th><th>Type</th><th>Method</th><th>Reference</th><th class="r">Amount</th><th></th></tr></thead><tbody>${pRows}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:700;color:var(--gn)">Total Collected</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(cp.paid)}</td><td></td></tr></tbody></table>`:'<div style="color:var(--fn);font-size:13px;padding:8px 0 16px">No payments recorded yet.</div>'}
+      <button class="btn bh sm" style="margin-top:10px" onclick="addEstPmt()">+ Record Payment</button>
+    </div>
+    ${cp.bal>0?`<div class="card" style="background:var(--gl);border-color:var(--gd)"><div class="fb"><div><div style="font-weight:600;font-size:15px">50% Deposit Due</div><div style="font-size:12px;color:var(--mu);margin-top:2px">Per standard terms</div></div><div class="mono" style="font-size:18px;font-weight:700;color:var(--nv)">${f$(cp.total*.5)}</div></div></div>`:''}
+    <button class="btn bp" onclick="ctab='einv';render()">&#128438; Print Invoice &rarr;</button>
+  </div>`;
+}
+
+function rEstInvPrint(e){
+  const c=cEst(e),cp=calcEstPmts(e);
+  const pmts=e.pmts||[];
+  const aos=e.addOns||[];
+  const logoH=logoD?`<img src="${logoD}" style="height:64px;width:auto;max-width:140px">`:'<div></div>';
+  const stBadge=cp.st==='paid'?`<div style="display:inline-block;background:#F0FDF4;border:2px solid #15803D;color:#15803D;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">&#10003; PAID IN FULL</div>`:cp.st==='partial'?`<div style="display:inline-block;background:#FEF2F2;border:2px solid #DC2626;color:#DC2626;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">PARTIALLY PAID &mdash; ${f$(cp.bal)} DUE</div>`:`<div style="display:inline-block;background:#EFF6FF;border:2px solid #2563EB;color:#2563EB;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">BALANCE DUE</div>`;
+  const items=e.md==='fr'?(e.fi||[]):(e.ci||[]);
+  const incAos=aos.filter(a=>a.inc);
+  const optAos=aos.filter(a=>!a.inc);
+  return`<div class="fb np" style="margin-bottom:16px;gap:8px">
+    <button class="btn bh" onclick="ctab='pmts';render()">&larr; Back to Payments</button>
+    <button class="btn bp" onclick="window.print()">&#128438; Print / Save PDF</button>
+  </div>
+  <div class="pw"><div class="pp2">
+    <div class="ph2"><div style="display:flex;align-items:center;gap:16px">${logoH}<div><div class="pcn">${CO.n}</div><div class="pcs">Professional Painting Services &middot; Denver Metro, CO</div></div></div><div class="pco"><div class="pcp">${CO.p}</div><div>${CO.e}</div><div>${CO.w}</div></div></div>
+    <div class="fb" style="margin-bottom:20px">
+      <div><div style="font-size:26px;font-weight:700;color:var(--nv)">INVOICE</div>${e.pn?`<div style="font-size:14px;color:var(--mu);margin-top:2px">#${esc(e.pn)}</div>`:''}</div>
+      <div style="text-align:right">${stBadge}<div style="font-size:13px;line-height:1.8"><div><strong>Date:</strong> ${fdt(e.di)}</div><div><strong>Due:</strong> Upon Receipt</div></div></div>
+    </div>
+    <div class="p2c">
+      <div class="ps"><div class="psh">BILLED TO</div><div class="psb"><div><strong>${esc(e.cl.n||'&mdash;')}</strong></div><div>${esc(e.cl.a||'')}</div><div>${esc(e.cl.p||'')}</div><div>${esc(e.cl.e||'')}</div></div></div>
+      <div class="ps"><div class="psh">PROJECT DETAILS</div><div class="psb"><div><strong>Type:</strong> ${JT[e.jt]?.s||e.jt}</div><div><strong>Address:</strong> ${esc(e.cl.a||'&mdash;')}</div>${e.sd?`<div><strong>Scope:</strong> ${esc(e.sd)}</div>`:''}</div></div>
+    </div>
+    <div class="ps"><div class="psh">SCOPE OF WORK &amp; PRICING</div>
+      <table class="dt"><thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>
+      <tbody>
+        ${e.md==='fr'?(e.fi||[]).map((item,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${esc(item.desc||'Painting services')}</td><td class="r">${fd(n0(item.price))}</td></tr>`).join(''):
+        `<tr><td>${esc(e.sd||JT[e.jt]?.s+' Painting')}</td><td class="r">${fd(c.sl-c.aoTotal)}</td></tr>`}
+        ${incAos.map(a=>`<tr><td>${esc(a.desc||'Add-on')}${a.notes?`<div style="font-size:11px;color:var(--mu)">${esc(a.notes)}</div>`:''}</td><td class="r">${fd(n0(a.price))}</td></tr>`).join('')}
+        ${c.di>0?`<tr><td style="color:var(--mu)">Discount</td><td class="r" style="color:var(--gn)">(${fd(c.di)})</td></tr>`:''}
+        <tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Contract Total</td><td class="r" style="font-weight:700;font-size:16px">${fd(c.sl)}</td></tr>
+      </tbody></table>
+    </div>
+    ${optAos.length?`<div class="ps"><div class="psh">OPTIONAL ADD-ONS (not included in total)</div><table class="dt"><thead><tr><th>Description</th><th class="r">Price</th></tr></thead><tbody>${optAos.map(a=>`<tr><td>${esc(a.desc)}</td><td class="r">${fd(n0(a.price))}</td></tr>`).join('')}</tbody></table></div>`:''}
+    <div class="ps"><div class="psh">PAYMENT SUMMARY</div>
+      <table class="dt"><tbody>
+        <tr><td colspan="2" style="color:var(--mu)">Contract Total</td><td class="r" style="font-weight:700;font-size:16px">${fd(cp.total)}</td></tr>
+        ${pmts.map(p=>`<tr><td style="color:var(--gn)">${p.type[0].toUpperCase()+p.type.slice(1)} &mdash; ${p.dt}</td><td style="color:var(--mu);font-size:12px">${p.method}${p.ref?' #'+p.ref:''}</td><td class="r" style="color:var(--gn)">(${fd(n0(p.amt))})</td></tr>`).join('')}
+        ${cp.paid>0?`<tr style="border-top:1px solid var(--bd)"><td colspan="2" style="font-weight:700;color:${cp.bal>0?'var(--rd)':'var(--gn)'}">Balance Due</td><td class="r" style="font-weight:700;font-size:18px;color:${cp.bal>0?'var(--rd)':'var(--gn)'}">${fd(cp.bal)}</td></tr>`:''}
+      </tbody></table>
+    </div>
+    <div class="ps"><div class="psh">PAYMENT INFORMATION</div><div class="psb">
+      <div style="margin-top:6px;font-size:14px"><strong>Make checks payable to: ${CO.n}</strong></div>
+      <div style="margin-top:8px"><strong>Accepted:</strong> Check &middot; ACH &middot; Zelle &middot; Wire &middot; Card <span style="color:var(--rd);font-size:12px">(3% surcharge)</span></div>
+      ${appS.checkAddr?`<div><strong>Mail to:</strong> ${appS.checkAddr}</div>`:''}
+      ${appS.zelle?`<div><strong>Zelle:</strong> ${appS.zelle}</div>`:''}
+      <div style="margin-top:4px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days. &nbsp;<strong>${CO.p}</strong> &middot; ${CO.e}</div>
+    </div></div>
+    <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
+  </div></div>`;
 }
 
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
