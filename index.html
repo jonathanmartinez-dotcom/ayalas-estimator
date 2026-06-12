@@ -128,7 +128,7 @@
 .psl{border-top:1px solid #9CA3AF;margin:28px 0 5px;}
 .pft{text-align:center;font-size:12px;color:var(--mu);padding-top:14px;border-top:2px solid var(--bd);}
 .pph{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;}
-@media print{img{max-width:100%!important;height:auto!important;object-fit:contain!important;page-break-inside:avoid;}
+@media print{
   @page{margin:0;size:letter;}
   .np{display:none!important;}
   .hdr{display:none!important;}
@@ -139,11 +139,13 @@
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div class="hdr">
   <div class="hdr-logo" onclick="setSection('est');goHome()">Ayala's <span>Estimator</span></div><div style="display:flex;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;gap:2px"><button onclick="setSection('est')" id="nav-est" style="padding:5px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:rgba(255,255,255,.15);color:white;transition:all .15s">Estimates</button><button onclick="setSection('tm')" id="nav-tm" style="padding:5px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:rgba(255,255,255,.55);transition:all .15s">T&M Jobs</button></div>
-  <div class="hdr-sep">|</div><div class="hdr-sub">Internal Tool</div>
+  <div class="hdr-sep">|</div><div class="hdr-sub" onclick="setSection('pdf')" style="cursor:pointer;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">&#128196; PDF Tools</div>
   <div class="hdr-r"><span id="si" style="font-size:11px;color:rgba(255,255,255,.4);min-width:80px;text-align:right;margin-right:4px"></span>
     <span style="font-size:12px;color:rgba(255,255,255,.3)" id="hc">0 estimates</span>
     <button class="btn bh sm np" onclick="doRefresh()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)" title="Refresh estimates">↻</button><button class="btn bh sm np" onclick="openS()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)">⚙ Settings</button>
@@ -365,6 +367,7 @@ function render(){
   // Update nav button styles
   const ne=document.getElementById('nav-est'),nt=document.getElementById('nav-tm');
   if(ne&&nt){ne.style.background=section==='est'?'rgba(255,255,255,.15)':'transparent';ne.style.color=section==='est'?'white':'rgba(255,255,255,.55)';nt.style.background=section==='tm'?'rgba(255,255,255,.15)':'transparent';nt.style.color=section==='tm'?'white':'rgba(255,255,255,.55)';}
+  if(section==='pdf'){app.innerHTML=rPDFTools();return;}
   if(section==='tm'){const j=getTMCur();if(tmView==='editor'&&j)app.innerHTML=rTMEditor(j);else{tmView='list';app.innerHTML=`<div class="fb" style="margin-bottom:16px;flex-wrap:wrap;gap:10px"><h1 style="font-size:21px;font-weight:700;color:var(--nv)">T&M Jobs</h1><button class="btn bp" onclick="newTMJob()">+ New T&M Job</button></div>`+rTMList();}return;}
   const e=getCur();
   if(view==='home')app.innerHTML=rHome();
@@ -661,7 +664,7 @@ function rTMMat(j){
   return`<div class="sy"><div class="card"><div class="ct">${unbilled.length>0?`Unbilled Materials &nbsp;<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px">${unbilled.length} new</span>`:'Materials & Expenses'}<div class="ctl"></div></div>${unbilled.length>0?hdr+`<div>${unbilled.map(e=>meRow(e,me.indexOf(e))).join('')}</div>${ubAmt>0?`<div class="dv"></div><div class="fb"><span style="color:var(--mu)">Unbilled Materials</span><span class="mono" style="font-weight:700;color:var(--nv)">${fd(ubAmt)}</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${Object.entries(byCat).map(([cat,amt])=>`<span style="background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:11px"><strong>${cat}</strong>: ${fd(amt)}</span>`).join('')}</div>`:''}`:
   `<div style="color:var(--fn);font-size:13px;padding:8px 0 4px">All material entries invoiced &mdash; add new entries below.</div>`}<button class="btn bh sm" style="margin-top:10px" onclick="addME()">+ Add Material / Expense</button></div>
   ${Object.keys(byInv).length?`<div class="card"><div class="ct">Invoiced Materials <span style="font-size:11px;font-weight:400;color:var(--mu);text-transform:none;letter-spacing:0">&mdash; click to expand / edit</span><div class="ctl"></div></div>${billedGroups}</div>`:''}
-  ${ubPhotos.length?`<div class="card"><div class="ct">Unbilled Receipts <div class="ctl"></div></div><div class="pg">${ubPhotos.map(e=>`<div><img src="${e.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--bd)"><div style="font-size:12px;color:var(--mu);margin-top:6px;text-align:center;font-weight:500">${esc(e.desc||e.vendor||'Receipt')} &middot; ${fd(n0(e.amt))}</div></div>`).join('')}</div></div>`:''}
+  ${ubPhotos.length?`<div class="card"><div class="ct">Unbilled Receipts <div class="ctl"></div></div><div class="pg">${ubPhotos.map(e=>`<div><img src="${e.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--bd)"><div style="font-size:10px;color:#6B7280;margin-top:3px;text-align:center">${esc(e.desc||e.vendor||'Receipt')} &middot; ${fd(n0(e.amt))}</div></div>`).join('')}</div></div>`:''}
   
   <div class="card" style="border-color:#FCD34D;background:linear-gradient(135deg,#FFFBEB,#FFF)">
     <div class="ct" style="color:#92400E">
@@ -913,7 +916,7 @@ function rTMInvPrint2(j,inv){
     ${inv.type==='progress'?`<div class="ps"><div class="psh">PROGRESS INVOICE</div><div class="psb">${esc(inv.progDesc||'Progress billing')}</div></div>`:``}
     ${te.length?`<div class="ps"><div class="psh">LABOR &mdash; TIME & MATERIALS</div><table class="dt"><thead><tr><th>Date</th><th>Employee</th><th>Description</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${(()=>{const grp={};te.forEach(e=>{const role=empRole(e.emp,e.rate);const key=e.dt+'|'+role+'|'+n0(e.rate)+'|'+(e.desc||'');if(!grp[key])grp[key]={dt:e.dt,role,rate:n0(e.rate),hrs:0,desc:e.desc||''};grp[key].hrs+=n0(e.hrs);});return Object.values(grp).sort((a,b)=>a.dt.localeCompare(b.dt)).map((r,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${r.dt}</td><td>${esc(r.role)}</td><td>${esc(r.desc)}</td><td class="r">${r.hrs.toFixed(2)}</td><td class="r">${fd(r.rate)}/hr</td><td class="r">${fd(r.hrs*r.rate)}</td></tr>`).join('');})()}${n0(j.lMkup)>0?`<tr><td colspan="5" style="color:var(--mu)">Labor Markup (${j.lMkup}%)</td><td class="r">${fd(ci.laborCost*n0(j.lMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="5" style="font-weight:600">Labor Total</td><td class="r" style="font-weight:700">${fd(ci.laborCost*(1+n0(j.lMkup)/100))}</td></tr></tbody></table></div>`:``}
     ${me.length?`<div class="ps"><div class="psh">MATERIALS & EXPENSES</div><table class="dt"><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th class="r">Amount</th></tr></thead><tbody>${me.map((e,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${e.dt}</td><td>${esc(e.desc)}</td><td>${esc(e.vendor)}</td><td>${e.cat}</td><td class="r">${fd(n0(e.amt))}</td></tr>`).join('')}${n0(j.mMkup)>0?`<tr><td colspan="4" style="color:var(--mu)">Materials Markup (${j.mMkup}%)</td><td class="r">${fd(ci.matCost*n0(j.mMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:600">Materials Total</td><td class="r" style="font-weight:700">${fd(ci.matCost*(1+n0(j.mMkup)/100))}</td></tr></tbody></table></div>`:``}
-    ${(()=>{const meWithPh=me.filter(e=>e.photo);if(!meWithPh.length)return'';return`<div class="ps"><div class="psh">RECEIPTS</div><div style="display:flex;flex-direction:column;gap:20px;padding:4px 0">${meWithPh.map(e=>`<div style="break-inside:avoid"><img src="${e.photo&&e.photo.includes('/storage/v1/object/public/')?(e.photo.replace('/object/public/','/render/image/public/')+'?width=800&quality=85'):e.photo}" style="width:100%;height:auto;max-height:600px;object-fit:contain;background:#F9FAFB;border-radius:6px;border:1px solid #E5E7EB;display:block"><div style="font-size:10px;color:#6B7280;margin-top:4px;text-align:center;line-height:1.3">${esc(e.desc||e.vendor||'Receipt')}<br><strong style="color:#1B2A4A">${fd(n0(e.amt))}</strong> &middot; ${e.dt}</div></div>`).join('')}</div></div>`;})()}
+    ${(()=>{const meWithPh=me.filter(e=>e.photo);if(!meWithPh.length)return'';return`<div class="ps"><div class="psh">RECEIPTS</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:4px 0">${meWithPh.map(e=>`<div style="break-inside:avoid"><img src="${e.photo}" style="width:100%;height:160px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB"><div style="font-size:10px;color:#6B7280;margin-top:4px;text-align:center;line-height:1.3">${esc(e.desc||e.vendor||'Receipt')}<br><strong style="color:#1B2A4A">${fd(n0(e.amt))}</strong> &middot; ${e.dt}</div></div>`).join('')}</div></div>`;})()}
     <div class="ps"><div class="psh">BILLING SUMMARY</div>
       <table class="dt"><tbody>
         <tr><td colspan="2" style="color:var(--mu);font-size:12px">${inv.bFrom&&inv.bTo?`Billing Period: ${fdt(inv.bFrom)} &mdash; ${fdt(inv.bTo)}`:(inv.bFrom?`From: ${fdt(inv.bFrom)}`:'')}</td><td></td></tr>
@@ -1312,6 +1315,92 @@ function getWeekRange(offset){
   const mon=new Date(now);mon.setDate(now.getDate()-day+1+(offset*7));
   const sun=new Date(mon);sun.setDate(mon.getDate()+6);
   return{from:mon.toISOString().slice(0,10),to:sun.toISOString().slice(0,10)};
+}
+
+
+function rPDFTools(){
+  return`<div style="max-width:600px;margin:0 auto;padding:20px">
+    <div class="fb" style="margin-bottom:20px">
+      <h1 style="font-size:21px;font-weight:700;color:var(--nv)">PDF Compressor</h1>
+      <button class="btn bh sm" onclick="setSection('est')">&#8592; Back</button>
+    </div>
+    <div class="card">
+      <div class="ct">Upload &amp; Compress <div class="ctl"></div></div>
+      <div style="font-size:13px;color:var(--mu);margin-bottom:16px">Upload a PDF and download a compressed version. Useful for invoice PDFs with large receipt photos.</div>
+      <div id="pdf-drop" style="border:2px dashed var(--bd);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('pdf-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--nv)'" ondragleave="this.style.borderColor='var(--bd)'" ondrop="event.preventDefault();this.style.borderColor='var(--bd)';handlePDFDrop(event)">
+        <div style="font-size:36px;margin-bottom:10px">📄</div>
+        <div style="font-weight:600;font-size:15px;margin-bottom:4px">Drop PDF here or click to browse</div>
+        <div style="font-size:12px;color:var(--mu)">Accepts .pdf files</div>
+        <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handlePDFFile(this.files[0])">
+      </div>
+      <div style="margin-top:16px">
+        <label class="fl">Quality (lower = smaller file)</label>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+          <input type="range" id="pdf-quality" min="0.3" max="1.0" step="0.05" value="0.7" style="flex:1" oninput="document.getElementById('pdf-qlabel').textContent=Math.round(this.value*100)+'%'">
+          <span id="pdf-qlabel" class="mono" style="min-width:40px;font-weight:600">70%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-top:3px"><span>Smaller file</span><span>Higher quality</span></div>
+      </div>
+    </div>
+    <div id="pdf-status" style="display:none" class="card">
+      <div id="pdf-status-inner"></div>
+    </div>
+  </div>`;
+}
+function handlePDFDrop(ev){const f=ev.dataTransfer.files[0];if(f&&f.type==='application/pdf')handlePDFFile(f);else alert('Please drop a PDF file.');}
+async function handlePDFFile(file){
+  if(!file)return;
+  const status=document.getElementById('pdf-status');
+  const inner=document.getElementById('pdf-status-inner');
+  status.style.display='block';
+  inner.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:28px;margin-bottom:10px">⏳</div><div style="font-weight:600">Reading PDF...</div><div id="pdf-prog" style="color:var(--mu);font-size:13px;margin-top:6px">0%</div></div>`;
+  try{
+    const quality=parseFloat(document.getElementById('pdf-quality').value)||0.7;
+    const ab=await file.arrayBuffer();
+    const origKB=Math.round(ab.byteLength/1024);
+    // Configure PDF.js worker
+    if(typeof pdfjsLib==='undefined')throw new Error('PDF.js not loaded yet — try again in a moment.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+    const {jsPDF}=window.jspdf;
+    let doc=null;
+    const total=pdf.numPages;
+    for(let i=1;i<=total;i++){
+      document.getElementById('pdf-prog').textContent=`Page ${i} of ${total}...`;
+      const page=await pdf.getPage(i);
+      const vp=page.getViewport({scale:1.5});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;canvas.height=vp.height;
+      const ctx=canvas.getContext('2d');
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      const imgData=canvas.toDataURL('image/jpeg',quality);
+      const pxW=vp.width,pxH=vp.height;
+      const ptW=pxW*(72/96),ptH=pxH*(72/96);
+      const orient=ptW>ptH?'l':'p';
+      if(!doc){doc=new jsPDF({orientation:orient,unit:'pt',format:[ptW,ptH]});}
+      else{doc.addPage([ptW,ptH],orient);}
+      doc.addImage(imgData,'JPEG',0,0,ptW,ptH,undefined,'FAST');
+    }
+    const outBlob=doc.output('blob');
+    const newKB=Math.round(outBlob.size/1024);
+    const savings=Math.round((1-outBlob.size/ab.byteLength)*100);
+    const url=URL.createObjectURL(outBlob);
+    const a=document.createElement('a');
+    a.href=url;a.download=file.name.replace('.pdf','_compressed.pdf');
+    inner.innerHTML=`<div style="text-align:center;padding:10px"><div style="font-size:36px;margin-bottom:10px">✅</div>
+      <div style="font-weight:700;font-size:16px;color:var(--nv);margin-bottom:12px">Compression Complete</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div class="sc"><div class="sv" style="font-size:18px">${origKB} KB</div><div class="sl">Original</div></div>
+        <div class="sc"><div class="sv" style="font-size:18px;color:var(--gn)">${newKB} KB</div><div class="sl">Compressed</div></div>
+        <div class="sc" style="background:var(--gl);border-color:var(--gd)"><div class="sv" style="font-size:18px;color:var(--gn)">${savings}%</div><div class="sl">Smaller</div></div>
+      </div>
+      <button class="btn bp" onclick="document.getElementById('pdf-dl-link').click()">&#8595; Download Compressed PDF</button>
+      <a id="pdf-dl-link" href="${url}" download="${file.name.replace('.pdf','_compressed.pdf')}" style="display:none"></a>
+      <div style="margin-top:12px"><button class="btn bh sm" onclick="document.getElementById('pdf-input').click()">Compress Another</button></div>
+    </div>`;
+  }catch(err){
+    inner.innerHTML=`<div style="text-align:center;padding:20px;color:var(--rd)"><div style="font-size:28px;margin-bottom:10px">⚠️</div><strong>Error:</strong> ${err.message}</div>`;
+  }
 }
 
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
