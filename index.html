@@ -908,7 +908,7 @@ function rTMInvPrint2(j,inv){
   const ci=calcInv(j,inv),te=(j.te||[]).filter(e=>(inv.teIds||[]).includes(e.id)),me=(j.me||[]).filter(e=>(inv.meIds||[]).includes(e.id));
   const logoH=logoD?`<img src="${logoD}" style="height:64px;width:auto;max-width:140px">`:`<div></div>`;
   const ist=ci.effSt;const badge=ist==='paid'?`<div style="display:inline-block;background:#F0FDF4;border:2px solid #15803D;color:#15803D;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">&#10003; PAID IN FULL</div>`:ist==='partial'?`<div style="display:inline-block;background:#FEF2F2;border:2px solid #DC2626;color:#DC2626;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">PARTIALLY PAID &mdash; ${fd(ci.balance)} DUE</div>`:ist==='sent'?`<div style="display:inline-block;background:#EFF6FF;border:2px solid #2563EB;color:#2563EB;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">AWAITING PAYMENT</div>`:``;
-  return`<div class="fb np" style="margin-bottom:16px;gap:8px"><button class="btn bh" onclick="tmInvMode='detail';render()">&larr; Back to Invoice</button><button class="btn bp" onclick="window.print()">&#128438; Print / Save PDF</button></div>
+  return`<div class="fb np" style="margin-bottom:16px;gap:8px;flex-wrap:wrap"><button class="btn bh" onclick="tmInvMode='detail';render()">&larr; Back to Invoice</button><button class="btn bp" onclick="window.print()">&#128438; Print Invoice PDF</button><button class="btn bo" onclick="tmInvMode='rcpt';render()">&#128247; Print Receipts PDF &rarr;</button></div>
   <div class="pw"><div class="pp2">
     <div class="ph2"><div style="display:flex;align-items:center;gap:16px">${logoH}<div><div class="pcn">${CO.n}</div><div class="pcs">Professional Painting Services &middot; Denver Metro, CO</div></div></div><div class="pco"><div class="pcp">${CO.p}</div><div>${CO.e}</div><div>${CO.w}</div></div></div>
     <div class="fb" style="margin-bottom:20px"><div><div style="font-size:26px;font-weight:700;color:var(--nv)">INVOICE</div>${inv.num?`<div style="font-size:14px;color:var(--mu);margin-top:2px">#${esc(inv.num)}</div>`:``}${j.agRef?`<div style="font-size:13px;color:var(--mu);margin-top:4px">Per Agreement ${esc(j.agRef)}</div>`:``}</div><div style="text-align:right">${badge}<div style="font-size:13px;line-height:1.8"><div><strong>Issued:</strong> ${fdt(inv.di)}</div><div><strong>Due:</strong> Upon Receipt</div></div></div></div>
@@ -916,7 +916,7 @@ function rTMInvPrint2(j,inv){
     ${inv.type==='progress'?`<div class="ps"><div class="psh">PROGRESS INVOICE</div><div class="psb">${esc(inv.progDesc||'Progress billing')}</div></div>`:``}
     ${te.length?`<div class="ps"><div class="psh">LABOR &mdash; TIME & MATERIALS</div><table class="dt"><thead><tr><th>Date</th><th>Employee</th><th>Description</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${(()=>{const grp={};te.forEach(e=>{const role=empRole(e.emp,e.rate);const key=e.dt+'|'+role+'|'+n0(e.rate)+'|'+(e.desc||'');if(!grp[key])grp[key]={dt:e.dt,role,rate:n0(e.rate),hrs:0,desc:e.desc||''};grp[key].hrs+=n0(e.hrs);});return Object.values(grp).sort((a,b)=>a.dt.localeCompare(b.dt)).map((r,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${r.dt}</td><td>${esc(r.role)}</td><td>${esc(r.desc)}</td><td class="r">${r.hrs.toFixed(2)}</td><td class="r">${fd(r.rate)}/hr</td><td class="r">${fd(r.hrs*r.rate)}</td></tr>`).join('');})()}${n0(j.lMkup)>0?`<tr><td colspan="5" style="color:var(--mu)">Labor Markup (${j.lMkup}%)</td><td class="r">${fd(ci.laborCost*n0(j.lMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="5" style="font-weight:600">Labor Total</td><td class="r" style="font-weight:700">${fd(ci.laborCost*(1+n0(j.lMkup)/100))}</td></tr></tbody></table></div>`:``}
     ${me.length?`<div class="ps"><div class="psh">MATERIALS & EXPENSES</div><table class="dt"><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th class="r">Amount</th></tr></thead><tbody>${me.map((e,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${e.dt}</td><td>${esc(e.desc)}</td><td>${esc(e.vendor)}</td><td>${e.cat}</td><td class="r">${fd(n0(e.amt))}</td></tr>`).join('')}${n0(j.mMkup)>0?`<tr><td colspan="4" style="color:var(--mu)">Materials Markup (${j.mMkup}%)</td><td class="r">${fd(ci.matCost*n0(j.mMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:600">Materials Total</td><td class="r" style="font-weight:700">${fd(ci.matCost*(1+n0(j.mMkup)/100))}</td></tr></tbody></table></div>`:``}
-    ${(()=>{const meWithPh=me.filter(e=>e.photo);if(!meWithPh.length)return'';return`<div class="ps"><div class="psh">RECEIPTS</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:4px 0">${meWithPh.map(e=>`<div style="break-inside:avoid"><img src="${e.photo}" style="width:100%;height:160px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB"><div style="font-size:10px;color:#6B7280;margin-top:4px;text-align:center;line-height:1.3">${esc(e.desc||e.vendor||'Receipt')}<br><strong style="color:#1B2A4A">${fd(n0(e.amt))}</strong> &middot; ${e.dt}</div></div>`).join('')}</div></div>`;})()}
+    
     <div class="ps"><div class="psh">BILLING SUMMARY</div>
       <table class="dt"><tbody>
         <tr><td colspan="2" style="color:var(--mu);font-size:12px">${inv.bFrom&&inv.bTo?`Billing Period: ${fdt(inv.bFrom)} &mdash; ${fdt(inv.bTo)}`:(inv.bFrom?`From: ${fdt(inv.bFrom)}`:'')}</td><td></td></tr>
@@ -941,7 +941,7 @@ function rTMInvPrint2(j,inv){
   </div></div>`;
 }
 function rTMEditor(j){
-  if(tmTab==='invt'&&tmInvMode!=='list'&&tmInvMode!==''){const inv2=(j.invoices||[]).find(i=>i.id===tmInvId);if(inv2&&tmInvMode==='print')return rTMEdTB(j)+rTMInvPrint2(j,inv2);}
+  if(tmTab==='invt'&&tmInvMode!=='list'&&tmInvMode!==''){const inv2=(j.invoices||[]).find(i=>i.id===tmInvId);if(inv2&&tmInvMode==='print')return rTMEdTB(j)+rTMInvPrint2(j,inv2);else if(tmInvMode==='rcpt')return rTMEdTB(j)+rTMReceiptsPrint(j,inv2);}
   const tabs=[{id:'info',l:'Job Info'},{id:'time',l:'⏱ Time ('+((j.te||[]).length)+')'},{id:'mat',l:'📦 Materials ('+((j.me||[]).length)+')'},{id:'invt',l:'Invoice'},{id:'notes',l:'📝 Notes ('+((j.notes||[]).length)+')'},{id:'sum2',l:'Summary'}];
   const vt=tabs.map(t=>t.id);if(!vt.includes(tmTab))tmTab='info';
   const tb=`<div class="tabbar np">${tabs.map(t=>`<button class="tb ${tmTab===t.id?'on':''}" onclick="swTM('${t.id}')">${t.l}</button>`).join('')}</div>`;
@@ -1401,6 +1401,43 @@ async function handlePDFFile(file){
   }catch(err){
     inner.innerHTML=`<div style="text-align:center;padding:20px;color:var(--rd)"><div style="font-size:28px;margin-bottom:10px">⚠️</div><strong>Error:</strong> ${err.message}</div>`;
   }
+}
+
+
+function rTMReceiptsPrint(j,inv){
+  const me=(j.me||[]).filter(e=>(inv.meIds||[]).includes(e.id)&&e.photo);
+  const logoH=logoD?`<img src="${logoD}" style="height:48px;width:auto;max-width:120px">`:'';
+  return`<div class="fb np" style="margin-bottom:16px;gap:8px;flex-wrap:wrap">
+    <button class="btn bh" onclick="tmInvMode='print';render()">&larr; Back to Invoice</button>
+    <button class="btn bp" onclick="window.print()">&#128438; Print Receipts PDF</button>
+  </div>
+  <div class="pw"><div class="pp2">
+    <div class="ph2">
+      <div style="display:flex;align-items:center;gap:12px">${logoH}<div><div class="pcn">${CO.n}</div><div class="pcs">Receipt Documentation</div></div></div>
+      <div class="pco" style="text-align:right"><div style="font-weight:600">Invoice ${esc(inv.num||'—')}</div><div style="font-size:12px;color:var(--mu)">${fdt(inv.di)}</div><div style="font-size:12px;color:var(--mu)">${esc((j.cl&&j.cl.n)||'')}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--mu);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bd)">
+      Job: <strong>${esc(j.jn||'—')}</strong> &nbsp;&middot;&nbsp; Per Agreement: <strong>${esc(j.agRef||'—')}</strong>
+    </div>
+    ${!me.length?`<div style="text-align:center;padding:40px;color:var(--mu)">No receipts with photos on this invoice.</div>`:`
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+      ${me.map((e,i)=>`<div style="break-inside:avoid;page-break-inside:avoid">
+        <img src="${e.photo}" style="width:100%;height:auto;max-height:400px;object-fit:contain;background:#F9FAFB;border-radius:6px;border:1px solid #E5E7EB;display:block">
+        <div style="margin-top:6px;padding:8px;background:#F9FAFB;border-radius:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--nv)">${esc(e.desc||e.vendor||'Receipt')}</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px">
+            <span style="color:var(--mu)">${esc(e.vendor||'')} &middot; ${e.dt}</span>
+            <span style="font-weight:700;font-family:'DM Mono',monospace">${fd(n0(e.amt))}</span>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:20px;padding-top:12px;border-top:2px solid var(--bd);display:flex;justify-content:space-between;font-size:13px">
+      <span style="color:var(--mu)">${me.length} receipt${me.length===1?'':'s'} attached</span>
+      <span style="font-weight:700">Total Materials: ${fd(me.reduce((s,e)=>s+n0(e.amt),0))}</span>
+    </div>`}
+    <div class="pft" style="margin-top:20px"><div style="font-size:11px;color:var(--mu)">${CO.n} &middot; Receipt Documentation &middot; Invoice ${esc(inv.num||'—')} &middot; ${CO.w}</div></div>
+  </div></div>`;
 }
 
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
