@@ -920,13 +920,7 @@ function rTMInvPrint2(j,inv){
         <tr style="border-bottom:2px solid var(--bd)"><td colspan="2"><strong>This Invoice Total</strong></td><td class="r" style="font-weight:700;font-size:16px">${fd(ci.subtotal)}</td></tr>
         ${(inv.payments||[]).map(p=>`<tr><td colspan="2" style="color:var(--gn);padding-left:12px">Payment &mdash; ${p.dt} (${p.method}${p.ref?' #'+p.ref:''})</td><td class="r" style="color:var(--gn)">(${fd(n0(p.amt))})</td></tr>`).join('')}
         ${ci.paid>0?`<tr><td colspan="2" style="color:var(--mu)">Balance Due This Invoice</td><td class="r" style="font-weight:700;color:${ci.balance>0?`var(--rd)`:`var(--gn)`}">${fd(ci.balance)}</td></tr>`:''}
-        ${(()=>{const engT=(j.invoices||[]).reduce((s,i)=>s+calcInv(j,i).subtotal,0);const engP=(j.invoices||[]).reduce((s,i)=>s+(i.payments||[]).reduce((ps,p)=>ps+n0(p.amt),0),0);const hAll=hoursBreakdown(j);const hInv=hoursBreakdown(j,inv.teIds);return`
-        <tr style="border-top:2px solid var(--bd)"><td colspan="2" style="color:var(--mu)">Engagement-to-Date Billed</td><td class="r" style="font-weight:600">${fd(engT)}</td></tr>
-        <tr><td colspan="2" style="color:var(--mu)">Engagement-to-Date Collected</td><td class="r" style="color:var(--gn)">${fd(engP)}</td></tr>
-        ${engT-engP>0?`<tr><td colspan="2" style="color:var(--mu)">Engagement-to-Date Balance</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(engT-engP)}</td></tr>`:''}
-        <tr style="border-top:1px solid #F3F4F6"><td colspan="3" style="color:var(--mu);font-size:12px;padding-top:8px">This Invoice: ${hInv.lab.toFixed(2)} LAB hrs + ${hInv.pm.toFixed(2)} PM hrs = ${hInv.total.toFixed(2)} total</td></tr>
-        <tr><td colspan="3" style="color:var(--mu);font-size:12px">Engagement-to-Date: ${hAll.lab.toFixed(2)} LAB hrs + ${hAll.pm.toFixed(2)} PM hrs = ${hAll.total.toFixed(2)} total</td></tr>
-        `;})()} 
+         
       </tbody></table>
     </div>
 <div class="ps"><div class="psh">PAYMENT INFORMATION</div><div class="psb">
@@ -940,7 +934,42 @@ function rTMInvPrint2(j,inv){
         <div style="margin-top:8px;font-size:12px;color:var(--mu)"><strong>Questions?</strong> ${CO.p} &middot; ${CO.e}</div>
         <div style="margin-top:4px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days.</div>
       </div></div>
-    ${rPayrollCard(j,inv,true)}<div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
+    <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
+  </div></div>`;
+ on rTMInvPrint2(j,inv){
+  const ci=calcInv(j,inv),te=(j.te||[]).filter(e=>(inv.teIds||[]).includes(e.id)),me=(j.me||[]).filter(e=>(inv.meIds||[]).includes(e.id));
+  const logoH=logoD?`<img src="${logoD}" style="height:64px;width:auto;max-width:140px">`:`<div></div>`;
+  const ist=ci.effSt;const badge=ist==='paid'?`<div style="display:inline-block;background:#F0FDF4;border:2px solid #15803D;color:#15803D;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">&#10003; PAID IN FULL</div>`:ist==='partial'?`<div style="display:inline-block;background:#FEF2F2;border:2px solid #DC2626;color:#DC2626;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">PARTIALLY PAID &mdash; ${fd(ci.balance)} DUE</div>`:ist==='sent'?`<div style="display:inline-block;background:#EFF6FF;border:2px solid #2563EB;color:#2563EB;border-radius:8px;padding:6px 16px;font-weight:700;font-size:13px;margin-bottom:12px">AWAITING PAYMENT</div>`:``;
+  return`<div class="fb np" style="margin-bottom:16px;gap:8px"><button class="btn bh" onclick="tmInvMode='detail';render()">&larr; Back to Invoice</button><button class="btn bp" onclick="window.print()">&#128438; Print / Save PDF</button></div>
+  <div class="pw"><div class="pp2">
+    <div class="ph2"><div style="display:flex;align-items:center;gap:16px">${logoH}<div><div class="pcn">${CO.n}</div><div class="pcs">Professional Painting Services &middot; Denver Metro, CO</div></div></div><div class="pco"><div class="pcp">${CO.p}</div><div>${CO.e}</div><div>${CO.w}</div></div></div>
+    <div class="fb" style="margin-bottom:20px"><div><div style="font-size:26px;font-weight:700;color:var(--nv)">INVOICE</div>${inv.num?`<div style="font-size:14px;color:var(--mu);margin-top:2px">#${esc(inv.num)}</div>`:``}${j.agRef?`<div style="font-size:13px;color:var(--mu);margin-top:4px">Per Agreement ${esc(j.agRef)}</div>`:``}</div><div style="text-align:right">${badge}<div style="font-size:13px;line-height:1.8"><div><strong>Issued:</strong> ${fdt(inv.di)}</div><div><strong>Due:</strong> Upon Receipt</div></div></div></div>
+    <div class="p2c"><div class="ps"><div class="psh">BILLED TO</div><div class="psb"><div><strong>${esc((j.cl&&j.cl.n)||'&mdash;')}</strong></div><div>${esc((j.cl&&j.cl.a)||'')}</div><div>${esc((j.cl&&j.cl.p)||'')}</div><div>${esc((j.cl&&j.cl.e)||'')}</div></div></div><div class="ps"><div class="psh">JOB DETAILS</div><div class="psb"><div><strong>Job:</strong> ${esc(j.jn||'&mdash;')}</div><div><strong>Type:</strong> ${inv.type==='progress'?'Progress Invoice':inv.type==='final'?'Final Invoice':'T&M Invoice'}</div>${inv.notes?`<div><strong>Notes:</strong> ${esc(inv.notes)}</div>`:``}</div></div></div>
+    ${inv.type==='progress'?`<div class="ps"><div class="psh">PROGRESS INVOICE</div><div class="psb">${esc(inv.progDesc||'Progress billing')}</div></div>`:``}
+    ${te.length?`<div class="ps"><div class="psh">LABOR &mdash; TIME & MATERIALS</div><table class="dt"><thead><tr><th>Date</th><th>Employee</th><th>Description</th><th class="r">Hours</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>${(()=>{const grp={};te.forEach(e=>{const role=empRole(e.emp,e.rate);const key=e.dt+'|'+role+'|'+n0(e.rate)+'|'+(e.desc||'');if(!grp[key])grp[key]={dt:e.dt,role,rate:n0(e.rate),hrs:0,desc:e.desc||''};grp[key].hrs+=n0(e.hrs);});return Object.values(grp).sort((a,b)=>a.dt.localeCompare(b.dt)).map((r,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${r.dt}</td><td>${esc(r.role)}</td><td>${esc(r.desc)}</td><td class="r">${r.hrs.toFixed(2)}</td><td class="r">${fd(r.rate)}/hr</td><td class="r">${fd(r.hrs*r.rate)}</td></tr>`).join('');})()}${n0(j.lMkup)>0?`<tr><td colspan="5" style="color:var(--mu)">Labor Markup (${j.lMkup}%)</td><td class="r">${fd(ci.laborCost*n0(j.lMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="5" style="font-weight:600">Labor Total</td><td class="r" style="font-weight:700">${fd(ci.laborCost*(1+n0(j.lMkup)/100))}</td></tr></tbody></table></div>`:``}
+    ${me.length?`<div class="ps"><div class="psh">MATERIALS & EXPENSES</div><table class="dt"><thead><tr><th>Date</th><th>Description</th><th>Vendor</th><th>Category</th><th class="r">Amount</th></tr></thead><tbody>${me.map((e,i)=>`<tr style="${i%2?'background:#FAFBFC':''}"><td>${e.dt}</td><td>${esc(e.desc)}</td><td>${esc(e.vendor)}</td><td>${e.cat}</td><td class="r">${fd(n0(e.amt))}</td></tr>`).join('')}${n0(j.mMkup)>0?`<tr><td colspan="4" style="color:var(--mu)">Materials Markup (${j.mMkup}%)</td><td class="r">${fd(ci.matCost*n0(j.mMkup)/100)}</td></tr>`:``}<tr style="border-top:2px solid var(--bd)"><td colspan="4" style="font-weight:600">Materials Total</td><td class="r" style="font-weight:700">${fd(ci.matCost*(1+n0(j.mMkup)/100))}</td></tr></tbody></table></div>`:``}
+    ${(()=>{const meWithPh=me.filter(e=>e.photo);if(!meWithPh.length)return'';return`<div class="ps"><div class="psh">RECEIPTS</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:4px 0">${meWithPh.map(e=>`<div style="break-inside:avoid"><img src="${e.photo}" style="width:100%;height:160px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB"><div style="font-size:10px;color:#6B7280;margin-top:4px;text-align:center;line-height:1.3">${esc(e.desc||e.vendor||'Receipt')}<br><strong style="color:#1B2A4A">${fd(n0(e.amt))}</strong> &middot; ${e.dt}</div></div>`).join('')}</div></div>`;})()}
+    <div class="ps"><div class="psh">BILLING SUMMARY</div>
+      <table class="dt"><tbody>
+        <tr><td colspan="2" style="color:var(--mu);font-size:12px">${inv.bFrom&&inv.bTo?`Billing Period: ${fdt(inv.bFrom)} &mdash; ${fdt(inv.bTo)}`:(inv.bFrom?`From: ${fdt(inv.bFrom)}`:'')}</td><td></td></tr>
+        <tr style="border-bottom:2px solid var(--bd)"><td colspan="2"><strong>This Invoice Total</strong></td><td class="r" style="font-weight:700;font-size:16px">${fd(ci.subtotal)}</td></tr>
+        ${(inv.payments||[]).map(p=>`<tr><td colspan="2" style="color:var(--gn);padding-left:12px">Payment &mdash; ${p.dt} (${p.method}${p.ref?' #'+p.ref:''})</td><td class="r" style="color:var(--gn)">(${fd(n0(p.amt))})</td></tr>`).join('')}
+        ${ci.paid>0?`<tr><td colspan="2" style="color:var(--mu)">Balance Due This Invoice</td><td class="r" style="font-weight:700;color:${ci.balance>0?`var(--rd)`:`var(--gn)`}">${fd(ci.balance)}</td></tr>`:''}
+         
+      </tbody></table>
+    </div>
+<div class="ps"><div class="psh">PAYMENT INFORMATION</div><div class="psb">
+        <div><strong>Accepted:</strong> Check &middot; ACH &middot; Zelle &middot; Wire &middot; Card <span style="color:var(--rd);font-size:12px">(3% surcharge applies to card payments)</span></div>
+        <div style="margin-top:10px;font-size:14px"><strong>Make checks payable to: ${CO.n}</strong></div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+          <div><strong>Mail checks to:</strong><br>${appS.checkAddr||'[Business mailing address]'}</div>
+          <div><strong>Zelle:</strong><br>${appS.zelle||'[Zelle phone or email]'}</div>
+        </div>
+        <div style="margin-top:8px;font-size:13px"><strong>ACH / Wire:</strong> ${appS.achInfo||'Routing details on request'}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--mu)"><strong>Questions?</strong> ${CO.p} &middot; ${CO.e}</div>
+        <div style="margin-top:4px;font-size:12px;color:var(--mu)">Late payments subject to 1.5% per 30 days.</div>
+      </div></div>
+    <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for choosing ${CO.n}.</div><div style="margin-top:10px;font-size:11px">${CO.n} &middot; Licensed &amp; Insured &middot; ${CO.w}</div></div>
   </div></div>`;
 }
 function rTMEditor(j){
