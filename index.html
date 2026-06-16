@@ -363,7 +363,7 @@ ${hp.length?`<div class="ps"><div class="psh">PROJECT PHOTOS</div><div class="ps
 <div class="pft"><div style="font-weight:700;color:var(--nv)">Thank you for the opportunity to earn your business.</div><div style="margin-top:4px">We take pride in every project and look forward to delivering exceptional results.</div><div style="margin-top:10px;font-size:11px">${CO.n} &nbsp;·&nbsp; Licensed &amp; Insured &nbsp;·&nbsp; Proudly Serving Colorado &nbsp;·&nbsp; ${CO.w}</div></div>
 </div></div>`;}
 function render(){
-  const app=document.getElementById('app');
+  const app=document.getElementById('app');const impMod=document.getElementById('tm-imp-modal');if(impMod)impMod.innerHTML=tmImpOpen?rTMImportModal():'';
   // Update nav button styles
   const ne=document.getElementById('nav-est'),nt=document.getElementById('nav-tm');
   if(ne&&nt){ne.style.background=section==='est'?'rgba(255,255,255,.15)':'transparent';ne.style.color=section==='est'?'white':'rgba(255,255,255,.55)';nt.style.background=section==='tm'?'rgba(255,255,255,.15)':'transparent';nt.style.color=section==='tm'?'white':'rgba(255,255,255,.55)';}
@@ -613,6 +613,8 @@ function rTMTime(j){
     <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
     <button class="btn bh sm" onclick="addTE()">+ Add Time Entry</button>
     <button class="btn bh sm" onclick="tmExportOpen=!tmExportOpen;render()" style="color:var(--nv)">&#8595; Export Hours</button>
+    <button class="btn bh sm" onclick="downloadLaborTemplate()" style="color:var(--nv)" title="Download PM weekly template">&#8659; Template</button>
+    <label class="btn bh sm" style="cursor:pointer;color:var(--nv)" title="Upload completed PM labor sheet">&#8657; Upload Labor Sheet<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="parseLaborFile(this.files[0],getTMCur());this.value=''"></label>
   </div>
   ${tmExportOpen?`<div style="background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-top:10px">
     <div style="font-weight:600;font-size:13px;margin-bottom:10px">Export Hours to Excel</div>
@@ -662,7 +664,11 @@ function rTMMat(j){
     return`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:8px;overflow:hidden"><div class="fb" style="padding:10px 14px;cursor:pointer;user-select:none" onclick="togMEGrp('${inv.id}')"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:#9CA3AF">${isExp?'&#9660;':'&#9654;'}</span><div><div style="font-weight:600;font-size:13px">Invoice ${esc(inv.num||'(No #)')} &mdash; ${entries.length} item${entries.length===1?'':'s'}</div><div style="font-size:11px;color:#6B7280">${fd(totA)} materials &middot; Issued ${fdt(inv.di)}</div></div></div><span class="bdg b-ac">Invoiced</span></div>${isExp?`<div style="border-top:1px solid #E5E7EB;padding:4px 14px 0">${hdr}${entries.map(({e,origIdx})=>meRow(e,origIdx)).join('')}</div>`:''}</div>`;
   }).join('');
   return`<div class="sy"><div class="card"><div class="ct">${unbilled.length>0?`Unbilled Materials &nbsp;<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px">${unbilled.length} new</span>`:'Materials & Expenses'}<div class="ctl"></div></div>${unbilled.length>0?hdr+`<div>${unbilled.map(e=>meRow(e,me.indexOf(e))).join('')}</div>${ubAmt>0?`<div class="dv"></div><div class="fb"><span style="color:var(--mu)">Unbilled Materials</span><span class="mono" style="font-weight:700;color:var(--nv)">${fd(ubAmt)}</span></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${Object.entries(byCat).map(([cat,amt])=>`<span style="background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:11px"><strong>${cat}</strong>: ${fd(amt)}</span>`).join('')}</div>`:''}`:
-  `<div style="color:var(--fn);font-size:13px;padding:8px 0 4px">All material entries invoiced &mdash; add new entries below.</div>`}<button class="btn bh sm" style="margin-top:10px" onclick="addME()">+ Add Material / Expense</button></div>
+  `<div style="color:var(--fn);font-size:13px;padding:8px 0 4px">All material entries invoiced &mdash; add new entries below.</div>`}<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+    <button class="btn bh sm" onclick="addME()">+ Add Material / Expense</button>
+    <button class="btn bh sm" onclick="downloadMaterialsTemplate()" style="color:var(--nv)" title="Download PM weekly template">&#8659; Template</button>
+    <label class="btn bh sm" style="cursor:pointer;color:var(--nv)" title="Upload completed PM materials sheet">&#8657; Upload Materials Sheet<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="parseMaterialsFile(this.files[0],getTMCur());this.value=''"></label>
+  </div></div>
   ${Object.keys(byInv).length?`<div class="card"><div class="ct">Invoiced Materials <span style="font-size:11px;font-weight:400;color:var(--mu);text-transform:none;letter-spacing:0">&mdash; click to expand / edit</span><div class="ctl"></div></div>${billedGroups}</div>`:''}
   ${ubPhotos.length?`<div class="card"><div class="ct">Unbilled Receipts <div class="ctl"></div></div><div class="pg">${ubPhotos.map(e=>`<div><img src="${e.photo}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--bd)"><div style="font-size:10px;color:#6B7280;margin-top:3px;text-align:center">${esc(e.desc||e.vendor||'Receipt')} &middot; ${fd(n0(e.amt))}</div></div>`).join('')}</div></div>`:''}
   
@@ -1440,6 +1446,335 @@ function rTMReceiptsPrint(j,inv){
   </div></div>`;
 }
 
+// ── STATE ─────────────────────────────────────────────────────────
+let tmImpType=null,tmImpRows=[],tmImpExcl=new Set(),tmImpOpen=false;
+
+// ── TEMPLATE GENERATORS ───────────────────────────────────────────
+function downloadLaborTemplate(){
+  const wb=XLSX.utils.book_new();
+  const hdr=['Date','Employee Name','Hours','Bill Rate ($/hr)','Pay Rate ($/hr)','Description','Notes'];
+  const samples=[
+    ['06/09/2026','Jesus (LAB)',8,40,25,'MP-RUST-Bldg B ground level stair 1',''],
+    ['06/09/2026','Francisco (LAB)',8,40,20,'MP-RUST-Bldg B ground level stair 1',''],
+    ['06/09/2026','Santiago (LAB)',8,40,25,'MP-RUST-Bldg B ground level stair 1',''],
+    ['06/09/2026','Jonathan (PM)',8,90,60,'MP-PM-Crew coordination + material run',''],
+    ['06/10/2026','Jesus (LAB)',8,40,25,'MP-RUST-Bldg B ground level stair 2',''],
+    ['06/10/2026','Jonathan (PM)',8,90,60,'MP-PM-Rust treatment supervision + supplier run',''],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...samples]);
+  ws['!cols']=[{wch:13},{wch:22},{wch:8},{wch:17},{wch:17},{wch:50},{wch:20}];
+  ws['A1'].s={font:{bold:true}};
+  XLSX.utils.book_append_sheet(wb,ws,'Time Entries');
+  const key=[
+    ['AYALA\'S PAINTING LLC — WEEKLY LABOR TIME ENTRY TEMPLATE'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['HOW TO USE THIS TEMPLATE'],
+    ['Step 1:','Fill in one row per employee per day worked.'],
+    ['Step 2:','PM submits completed file to Jonathan every Friday by 5pm.'],
+    ['Step 3:','Save file as: [Property]-[WeekEnding]-Labor.xlsx'],
+    ['Example filename:','MP-2026-06-14-Labor.xlsx'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['COLUMN GUIDE'],
+    ['Date','Format: MM/DD/YYYY — Example: 06/09/2026'],
+    ['Employee Name','Format: FirstName (ROLE) — See naming convention below'],
+    ['Hours','Decimal hours — Examples: 8 or 8.5 or 9.25'],
+    ['Bill Rate ($/hr)','Per MSA: PM = $90/hr, LAB = $40/hr. Leave blank if unsure.'],
+    ['Pay Rate ($/hr)','Actual pay to worker (internal cost). Leave blank if unsure.'],
+    ['Description','REQUIRED. Use format below. See examples in the data sheet.'],
+    ['Notes','Optional. Any special circumstances or clarifications.'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['EMPLOYEE NAMING CONVENTION — CRITICAL'],
+    ['Format:','FirstName (ROLE)'],
+    ['','The (ROLE) tag in parentheses is required for payroll classification.'],[''],
+    ['(PM)','Project Manager — site supervision, crew management, client communication,'],
+    ['','scheduling, supplier runs, daily reporting. Rate: $90/hr billed.'],[''],
+    ['(LAB)','Laborer / Painter — painting, surface prep, rust treatment, caulking,'],
+    ['','power washing, drywall repair, cleanup, fence painting. Rate: $40/hr billed.'],[''],
+    ['CORRECT Examples:','Jonathan (PM)    Jesus (LAB)    Ruben (LAB)    Ricardo (LAB)'],
+    ['WRONG Examples:','Jonathan PM    jesus lab    Jonathan    J. Martinez'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['PROPERTY CODES'],
+    ['MP','Michael Place Apartments — 400 N 19th Ave, Brighton CO 80601'],
+    ['CP','Christine Place Apartments — 600 N 19th Ave, Brighton CO 80601'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['PHASE CODES (use in Description)'],
+    ['RUST','Rust treatment — wire brushing, naval jelly, rust converter, rust-inhibiting primer'],
+    ['PAINT','Painting / finish coat application — walls, trim, doors, railings, fences'],
+    ['PREP','Surface prep — sanding, masking, drop cloths, caulking, scraping'],
+    ['SAFE','Safety setup — extinguisher placement, barrier setup, PPE, cleanup'],
+    ['PM','Project management — supervision, scheduling, client comm, supplier coordination'],
+    ['MIXED','Use when one entry covers multiple phases (e.g., prep AND rust treatment same day)'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['DESCRIPTION FORMAT — REQUIRED'],
+    ['Format:','[PROPERTY]-[PHASE]-[DETAIL]'],[''],
+    ['Examples:','MP-RUST-Bldg B ground level stair 1'],
+    ['','MP-RUST-Bldg A exterior staircase handrails'],
+    ['','CP-PAINT-Building exterior west wall 2nd floor'],
+    ['','MP-PM-Crew coordination + material run to Sherwin-Williams'],
+    ['','MP-PM-Site walk-through with Jack, crew brief, daily progress report'],
+    ['','MP-PREP-Bldg A and B power wash and surface scraping'],
+    ['','MP-MIXED-Rust treatment and prep work Bldg B stairs'],
+  ];
+  const wsKey=XLSX.utils.aoa_to_sheet(key);
+  wsKey['!cols']=[{wch:22},{wch:75}];
+  XLSX.utils.book_append_sheet(wb,wsKey,'KEY — Read First');
+  XLSX.writeFile(wb,'Ayalas_Labor_Entry_Template.xlsx');
+}
+
+function downloadMaterialsTemplate(){
+  const wb=XLSX.utils.book_new();
+  const hdr=['Date','Description','Vendor','Category','Amount ($)','Receipt #','Notes'];
+  const samples=[
+    ['06/09/2026','MP-PREP-SW-Primer, masking tape, drop cloths','SW','supplies',206.05,'SW-001',''],
+    ['06/09/2026','MP-RUST-HD-Rust solution, wire wheels, sealant','HD','supplies',68.95,'HD-001',''],
+    ['06/09/2026','MP-SAFE-HD-Fire extinguisher, safety blankets','HD','supplies',44.97,'HD-002',''],
+    ['06/09/2026','MP-RUST-NAPA-NAPA-RUST-NAVAL-8OZ Naval jelly rust dissolver','NAPA','supplies',10.84,'NAPA-001',''],
+    ['06/09/2026','MP-PAINT-SW-SW-FIN-PI-EPOXY-SG QR match green railings gallon 1','SW','supplies',71.56,'SW-002',''],
+    ['06/10/2026','MP-MIXED-HD-Flap discs, rust remover, sanding sheets','HD','supplies',98.49,'HD-003',''],
+    ['06/10/2026','MP-PREP-SW-ScotchBlue 2090 tape contractor pack','SW','supplies',23.05,'SW-003',''],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...samples]);
+  ws['!cols']=[{wch:13},{wch:60},{wch:8},{wch:12},{wch:12},{wch:12},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws,'Materials');
+  const key=[
+    ['AYALA\'S PAINTING LLC — WEEKLY MATERIALS ENTRY TEMPLATE'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['HOW TO USE THIS TEMPLATE'],
+    ['Step 1:','One row per receipt / purchase transaction.'],
+    ['Step 2:','Attach receipt photos separately or note receipt # for matching.'],
+    ['Step 3:','Submit to Jonathan every Friday with the labor sheet.'],
+    ['Step 4:','Save file as: [Property]-[WeekEnding]-Materials.xlsx'],
+    ['Example filename:','MP-2026-06-14-Materials.xlsx'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['COLUMN GUIDE'],
+    ['Date','Format: MM/DD/YYYY — date of purchase, not delivery'],
+    ['Description','REQUIRED. Use naming convention below. Full description of what was purchased.'],
+    ['Vendor','Vendor code — see vendor list below'],
+    ['Category','Category code — see category list below'],
+    ['Amount ($)','Dollar amount with cents — Example: 206.05 (do not include $ sign)'],
+    ['Receipt #','Optional but recommended. Your own reference number to match to photo.'],
+    ['Notes','Optional. Clarifications, PO numbers, special notes.'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['VENDOR CODES'],
+    ['SW','Sherwin-Williams'],
+    ['HD','Home Depot'],
+    ['LOW','Lowes'],
+    ['NAPA','NAPA Auto Parts (rust treatment supplies)'],
+    ['BOM','Budget Office / Miscellaneous supplier'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['CATEGORY CODES'],
+    ['supplies','Paint, primer, masking, caulk, sandpaper, consumables (most common)'],
+    ['lumber','Wood, MDF, trim boards, plywood'],
+    ['tools','Tool purchase (drill bits, brushes, rollers, scrapers)'],
+    ['rental','Equipment rental (sprayers, lifts, pressure washers)'],
+    ['subcontract','Subcontractor payments'],
+    ['disposal','Waste disposal, dump fees'],
+    ['misc','Anything not covered above'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['PROPERTY CODES'],
+    ['MP','Michael Place Apartments — 400 N 19th Ave, Brighton CO'],
+    ['CP','Christine Place Apartments — 600 N 19th Ave, Brighton CO'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['PHASE CODES (use in Description)'],
+    ['RUST','Rust treatment — wire brushing, naval jelly, rust converter'],
+    ['PAINT','Paint / finish coat materials'],
+    ['PREP','Surface prep — sandpaper, masking tape, drop cloths, scrapers'],
+    ['SAFE','Safety equipment — PPE, fire extinguishers, caution tape, blankets'],
+    ['MIXED','Use when a SINGLE RECEIPT covers multiple phases'],[''],
+    ['NOTE: MOB (mobilization) is RETIRED — do not use. Mobilization is not billed per MSA.'],[''],
+    ['━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'],[''],
+    ['DESCRIPTION FORMAT — REQUIRED'],
+    ['Format:','[PROPERTY]-[PHASE]-[VENDOR]-[DETAIL]'],[''],
+    ['Examples:','MP-PREP-SW-Primer, masking tape, drop cloths'],
+    ['','MP-RUST-HD-Rust solution, wire wheels, sealant'],
+    ['','MP-SAFE-HD-Fire extinguisher, safety blankets'],
+    ['','MP-PAINT-SW-SW-FIN-PI-EPOXY-SG QR match green railings gallon 1'],
+    ['','MP-MIXED-SW-Paint, primer, masking paper, poly sheeting'],
+    ['','MP-RUST-NAPA-NAPA-RUST-NAVAL-8OZ Naval jelly rust dissolver'],
+    ['','CP-PREP-LOW-5-gallon bucket lids, stir sticks, plastic sheeting'],[''],
+    ['IMPORTANT: Description is your audit trail. Be specific — include SKU codes,'],
+    ['quantities, and colors where relevant. This is what appears on the client invoice.'],
+  ];
+  const wsKey=XLSX.utils.aoa_to_sheet(key);
+  wsKey['!cols']=[{wch:22},{wch:75}];
+  XLSX.utils.book_append_sheet(wb,wsKey,'KEY — Read First');
+  XLSX.writeFile(wb,'Ayalas_Materials_Entry_Template.xlsx');
+}
+
+// ── IMPORT PARSERS ────────────────────────────────────────────────
+function normH(s){return(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+
+function parseLaborFile(file,j){
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,raw:false});
+      const ws=wb.Sheets['Time Entries']||wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,cellDates:true,raw:false,defval:''});
+      if(rows.length<2){alert('No data found in file.');return;}
+      // Find header row
+      const hIdx=rows.findIndex(r=>r.some(c=>normH(String(c)).includes('employee')));
+      if(hIdx<0){alert('Could not find header row. Make sure file matches the template.');return;}
+      const hdrs=rows[hIdx].map(h=>normH(String(h)));
+      const ci={
+        dt:hdrs.findIndex(h=>h.includes('date')),
+        emp:hdrs.findIndex(h=>h.includes('employee')||h.includes('name')),
+        hrs:hdrs.findIndex(h=>h.includes('hour')||h==='hrs'),
+        rate:hdrs.findIndex(h=>h.includes('bill')||h.includes('rate')),
+        cost:hdrs.findIndex(h=>h.includes('pay')||h.includes('cost')),
+        desc:hdrs.findIndex(h=>h.includes('desc')||h.includes('description')),
+        notes:hdrs.findIndex(h=>h.includes('note')),
+      };
+      const data=rows.slice(hIdx+1).filter(r=>r.some(c=>String(c).trim()));
+      const existing=j.te||[];
+      tmImpRows=data.map((r,i)=>{
+        const dt=r[ci.dt]?String(r[ci.dt]).trim():'';
+        const emp=r[ci.emp]?String(r[ci.emp]).trim():'';
+        const hrs=parseFloat(String(r[ci.hrs]||'').replace(/[^0-9.]/g,''))||0;
+        const rate=parseFloat(String(r[ci.rate]||'').replace(/[^0-9.]/g,''))||0;
+        const costRate=parseFloat(String(r[ci.cost]||'').replace(/[^0-9.]/g,''))||0;
+        const desc=r[ci.desc]?String(r[ci.desc]).trim():'';
+        const notes=r[ci.notes]?String(r[ci.notes]).trim():'';
+        // Normalize date
+        let normDt=dt;
+        if(dt&&dt.includes('/')){const p=dt.split('/');if(p.length===3)normDt=p[2]+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0');}
+        // Duplicate check: same date + employee + hours
+        const isDup=existing.some(e=>e.dt===normDt&&(e.emp||'').toLowerCase().trim()===(emp||'').toLowerCase().trim()&&Math.abs(n0(e.hrs)-hrs)<0.01);
+        const valid=normDt&&emp&&hrs>0;
+        return{i,dt:normDt,emp,hrs,rate,costRate,desc,notes,isDup,valid,raw:r};
+      }).filter(r=>r.valid||r.emp||r.dt);
+      tmImpType='labor';tmImpExcl=new Set(tmImpRows.filter(r=>r.isDup).map(r=>r.i));
+      tmImpOpen=true;render();
+    }catch(err){alert('Error parsing file: '+err.message);}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function parseMaterialsFile(file,j){
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',raw:false});
+      const ws=wb.Sheets['Materials']||wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      if(rows.length<2){alert('No data found.');return;}
+      const hIdx=rows.findIndex(r=>r.some(c=>normH(String(c)).includes('desc')||normH(String(c)).includes('vendor')));
+      if(hIdx<0){alert('Could not find header row.');return;}
+      const hdrs=rows[hIdx].map(h=>normH(String(h)));
+      const ci={
+        dt:hdrs.findIndex(h=>h.includes('date')),
+        desc:hdrs.findIndex(h=>h.includes('desc')),
+        vendor:hdrs.findIndex(h=>h.includes('vendor')),
+        cat:hdrs.findIndex(h=>h.includes('cat')),
+        amt:hdrs.findIndex(h=>h.includes('amount')||h.includes('amt')||h==='$'),
+        rcpt:hdrs.findIndex(h=>h.includes('receipt')||h.includes('rcpt')||h.includes('ref')),
+        notes:hdrs.findIndex(h=>h.includes('note')),
+      };
+      const data=rows.slice(hIdx+1).filter(r=>r.some(c=>String(c).trim()));
+      const existing=j.me||[];
+      tmImpRows=data.map((r,i)=>{
+        const dt=r[ci.dt]?String(r[ci.dt]).trim():'';
+        const desc=r[ci.desc]?String(r[ci.desc]).trim():'';
+        const vendor=r[ci.vendor]?String(r[ci.vendor]).trim().toUpperCase():'';
+        const cat=r[ci.cat]?String(r[ci.cat]).trim().toLowerCase():'supplies';
+        const amt=parseFloat(String(r[ci.amt]||'').replace(/[^0-9.]/g,''))||0;
+        const rcpt=r[ci.rcpt]?String(r[ci.rcpt]).trim():'';
+        const notes=r[ci.notes]?String(r[ci.notes]).trim():'';
+        let normDt=dt;
+        if(dt&&dt.includes('/')){const p=dt.split('/');if(p.length===3)normDt=p[2]+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0');}
+        // Duplicate check: same date + vendor + amount
+        const isDup=existing.some(e=>e.dt===normDt&&(e.vendor||'').toUpperCase()===vendor&&Math.abs(n0(e.amt)-amt)<0.01);
+        const valid=normDt&&(desc||vendor)&&amt>0;
+        return{i,dt:normDt,desc,vendor,cat,amt,rcpt,notes,isDup,valid};
+      }).filter(r=>r.valid||(r.desc&&r.vendor));
+      tmImpType='materials';tmImpExcl=new Set(tmImpRows.filter(r=>r.isDup).map(r=>r.i));
+      tmImpOpen=true;render();
+    }catch(err){alert('Error parsing file: '+err.message);}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// ── IMPORT MODAL RENDER ───────────────────────────────────────────
+function rTMImportModal(){
+  if(!tmImpOpen)return'';
+  const rows=tmImpRows,type=tmImpType;
+  const newRows=rows.filter(r=>!tmImpExcl.has(r.i)&&!r.isDup);
+  const dupRows=rows.filter(r=>r.isDup);
+  const excl=rows.filter(r=>tmImpExcl.has(r.i)&&!r.isDup);
+
+  const tableRows=rows.map(r=>{
+    const isDup=r.isDup,isExcl=tmImpExcl.has(r.i);
+    const bg=isDup?'#FFFBEB':isExcl?'#FEF2F2':'#F0FDF4';
+    const badge=isDup?'<span class="bdg b-re">Duplicate</span>':isExcl?'<span class="bdg b-dr">Excluded</span>':'<span class="bdg b-ac">New</span>';
+    if(type==='labor'){
+      return`<tr style="background:${bg}">
+        <td><input type="checkbox" style="accent-color:var(--nv)" ${!isExcl&&!isDup?'checked':isDup?'':isExcl?'':'checked'} ${isDup?'disabled':''} onchange="tmImpExcl.has(${r.i})?tmImpExcl.delete(${r.i}):tmImpExcl.add(${r.i});render()"></td>
+        <td style="font-size:12px">${r.dt}</td>
+        <td style="font-size:12px;font-weight:600">${esc(r.emp)}</td>
+        <td class="r" style="font-size:12px;font-family:'DM Mono',monospace">${r.hrs}</td>
+        <td class="r" style="font-size:12px;font-family:'DM Mono',monospace">${r.rate?fd(r.rate):'-'}</td>
+        <td style="font-size:12px;color:var(--mu)">${esc((r.desc||'').slice(0,50))}${(r.desc||'').length>50?'…':''}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }else{
+      return`<tr style="background:${bg}">
+        <td><input type="checkbox" style="accent-color:var(--nv)" ${!isExcl&&!isDup?'checked':''} ${isDup?'disabled':''} onchange="tmImpExcl.has(${r.i})?tmImpExcl.delete(${r.i}):tmImpExcl.add(${r.i});render()"></td>
+        <td style="font-size:12px">${r.dt}</td>
+        <td style="font-size:12px">${esc(r.vendor)}</td>
+        <td style="font-size:12px;color:var(--mu)">${esc((r.desc||'').slice(0,45))}${(r.desc||'').length>45?'…':''}</td>
+        <td class="r" style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace">${fd(r.amt)}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }
+  }).join('');
+
+  const toImport=rows.filter(r=>!tmImpExcl.has(r.i)&&!r.isDup);
+  return`<div style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;overflow-y:auto;padding:20px">
+    <div style="background:white;border-radius:14px;max-width:900px;margin:0 auto;padding:28px">
+      <div class="fb" style="margin-bottom:20px">
+        <div><div style="font-size:19px;font-weight:700;color:var(--nv)">Import ${type==='labor'?'Time Entries':'Materials'}</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:3px">${rows.length} rows parsed from file</div></div>
+        <button onclick="tmImpOpen=false;tmImpRows=[];render()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9CA3AF">&times;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div class="sc" style="background:#F0FDF4;border-color:#86EFAC"><div class="sv" style="color:var(--gn);font-size:22px">${toImport.length}</div><div class="sl">Will Import</div></div>
+        <div class="sc" style="background:#FFFBEB;border-color:#FCD34D"><div class="sv" style="color:#92400E;font-size:22px">${dupRows.length}</div><div class="sl">Duplicates (skipped)</div></div>
+        <div class="sc" style="background:#FEF2F2;border-color:#FCA5A5"><div class="sv" style="color:var(--rd);font-size:22px">${excl.length}</div><div class="sl">Manually Excluded</div></div>
+      </div>
+      ${dupRows.length?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400E">&#9888; <strong>${dupRows.length} duplicate${dupRows.length>1?'s':''} detected</strong> — these rows already exist in the job and are excluded by default. Checkboxes are disabled for duplicates.</div>`:''}
+      <div style="overflow-x:auto;max-height:380px;border:1px solid var(--bd);border-radius:8px;margin-bottom:16px">
+        <table class="dt" style="min-width:600px">
+          <thead style="position:sticky;top:0;background:#F9FAFB">
+            <tr>${type==='labor'?
+              `<th style="width:36px"></th><th>Date</th><th>Employee</th><th class="r">Hrs</th><th class="r">Bill Rate</th><th>Description</th><th>Status</th>`:
+              `<th style="width:36px"></th><th>Date</th><th>Vendor</th><th>Description</th><th class="r">Amount</th><th>Status</th>`}
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+        <button onclick="tmImpOpen=false;tmImpRows=[];render()" style="padding:10px 18px;background:#F3F4F6;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+        <button onclick="runTMImport()" style="padding:10px 24px;background:var(--nv);border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;color:white">&#10003; Import ${toImport.length} Row${toImport.length!==1?'s':''}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function runTMImport(){
+  const j=getTMCur();if(!j)return;
+  const toImport=tmImpRows.filter(r=>!tmImpExcl.has(r.i)&&!r.isDup);
+  if(!toImport.length){alert('No rows selected to import.');return;}
+  if(tmImpType==='labor'){
+    toImport.forEach(r=>{j.te=[...(j.te||[]),{id:uid(),dt:r.dt,emp:r.emp,hrs:String(r.hrs),rate:String(r.rate||0),costRate:String(r.costRate||0),desc:r.desc}];});
+  }else{
+    toImport.forEach(r=>{j.me=[...(j.me||[]),{id:uid(),dt:r.dt,desc:r.desc,vendor:r.vendor,cat:r.cat||'supplies',amt:String(r.amt),photo:null}];});
+  }
+  svTM();tmImpOpen=false;tmImpRows=[];
+  alert(`✓ ${toImport.length} ${tmImpType==='labor'?'time entr'+(toImport.length===1?'y':'ies'):'material item'+(toImport.length===1?'':'s')} imported successfully.`);
+  render();
+}
+
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
 ldData();
 </script>
@@ -1460,5 +1795,6 @@ ldData();
     </div>
   </div>
 </div>
+<div id="tm-imp-modal"></div>
 </body>
 </html>
