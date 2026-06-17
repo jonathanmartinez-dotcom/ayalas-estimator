@@ -907,6 +907,70 @@ function rTMSum2(j){
     <div style="overflow-x:auto"><table class="dt" style="min-width:700px"><thead><tr><th>Invoice</th><th class="r">Labor Billed</th><th class="r">Labor Cost</th><th class="r">Labor Margin</th><th class="r">Overhead</th><th class="r">Net Profit</th><th class="r">Materials</th><th class="r">Total</th><th class="r">Collected</th><th class="r">Balance</th><th>Status</th></tr></thead>
     <tbody>${invRows}<tr style="border-top:2px solid var(--bd)"><td style="font-weight:700">Total</td><td class="r" style="font-weight:700">${fd(labRev)}</td><td class="r" style="font-weight:700;color:var(--rd)">${fd(labPay)}</td><td class="r" style="font-weight:700;color:var(--gn)">${fd(labMargin)}</td><td class="r" style="color:#92400E">${c.totalOH>0?`(${fd(c.totalOH)})`:'—'}</td><td class="r" style="font-weight:700;color:${c.netProfit>=0?'var(--gn)':'var(--rd)'}">${fd(c.netProfit)}</td><td class="r">${fd(matCost)}</td><td class="r" style="font-weight:700">${fd(c.tBilled)}</td><td class="r" style="color:var(--gn)">${fd(c.tCollected)}</td><td class="r" style="color:${c.tOutstanding>0?'var(--rd)':'var(--gn)'};">${fd(c.tOutstanding)}</td><td></td></tr></tbody>
     </table></div></div>`:''}
+  ${(()=>{
+    const me=j.me||[],invs=j.invoices||[];
+    if(!me.length)return'';
+    // Build vendor totals across entire project
+    const vTot={};
+    me.forEach(e=>{const v=(e.vendor||'Other').toUpperCase()||'Other';if(!vTot[v])vTot[v]={total:0,cnt:0,items:[]};vTot[v].total+=n0(e.amt);vTot[v].cnt++;vTot[v].items.push(e);});
+    const vendors=Object.keys(vTot).sort((a,b)=>vTot[b].total-vTot[a].total);
+    const totalMat=Object.values(vTot).reduce((s,v)=>s+v.total,0);
+    const maxVend=Math.max(...vendors.map(v=>vTot[v].total),1);
+    // Vendor bar chart rows
+    const vendorBars=vendors.map(v=>{const d=vTot[v];const pct=totalMat>0?(d.total/totalMat*100):0;return`<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;flex-wrap:wrap;gap:4px">
+        <span style="font-weight:700;font-size:14px">${v}</span>
+        <div style="font-size:12px;color:var(--mu);display:flex;gap:12px">
+          <span>${d.cnt} receipt${d.cnt===1?'':'s'}</span>
+          <span style="font-weight:700;color:var(--nv)">${fd(d.total)}</span>
+          <span style="color:var(--gn)">${pct.toFixed(1)}%</span>
+        </div>
+      </div>
+      <div style="background:#F3F4F6;border-radius:6px;height:12px;overflow:hidden">
+        <div style="background:var(--gd);height:100%;width:${pct}%;border-radius:6px;transition:width .4s"></div>
+      </div>
+    </div>`;}).join('');
+    // Per-invoice vendor cross-tab
+    const invData=invs.map(inv=>{
+      const iME=me.filter(e=>(inv.meIds||[]).includes(e.id));
+      const vb={};iME.forEach(e=>{const v=(e.vendor||'Other').toUpperCase();if(!vb[v])vb[v]=0;vb[v]+=n0(e.amt);});
+      return{inv,vb,total:iME.reduce((s,e)=>s+n0(e.amt),0),cnt:iME.length};
+    }).filter(d=>d.cnt>0);
+    // Unattached materials (not on any invoice)
+    const billedME=new Set(invs.flatMap(i=>i.meIds||[]));
+    const unbilledME=me.filter(e=>!billedME.has(e.id));
+    const ubVb={};unbilledME.forEach(e=>{const v=(e.vendor||'Other').toUpperCase();if(!ubVb[v])ubVb[v]=0;ubVb[v]+=n0(e.amt);});
+    const ubTotal=unbilledME.reduce((s,e)=>s+n0(e.amt),0);
+    if(unbilledME.length)invData.push({inv:{num:'Unbilled',di:''},vb:ubVb,total:ubTotal,cnt:unbilledME.length,isUnbilled:true});
+    // Cross-tab header and rows
+    const crossTab=invData.length?`<div style="overflow-x:auto;margin-top:16px"><table class="dt" style="min-width:500px">
+      <thead><tr><th>Invoice</th>${vendors.map(v=>`<th class="r">${v}</th>`).join('')}<th class="r" style="font-weight:700">Total</th></tr></thead>
+      <tbody>
+        ${invData.map(d=>`<tr style="${d.isUnbilled?'background:#FFFBEB':''}">
+          <td><strong>${esc(d.inv.num||'—')}</strong>${d.inv.di?`<div style="font-size:11px;color:var(--mu)">${fdt(d.inv.di)}</div>`:'<div style="font-size:11px;color:#B45309">Not yet invoiced</div>'}
+          </td>
+          ${vendors.map(v=>`<td class="r" style="font-size:13px">${d.vb[v]?fd(d.vb[v]):'<span style="color:#E5E7EB">—</span>'}</td>`).join('')}
+          <td class="r" style="font-weight:700">${fd(d.total)}</td>
+        </tr>`).join('')}
+        <tr style="border-top:2px solid var(--bd);background:#F9FAFB">
+          <td style="font-weight:700">Project Total</td>
+          ${vendors.map(v=>`<td class="r" style="font-weight:700;color:var(--nv)">${fd(vTot[v].total)}</td>`).join('')}
+          <td class="r" style="font-weight:700;font-size:14px">${fd(totalMat)}</td>
+        </tr>
+      </tbody>
+    </table></div>`:'';
+    return`<div class="card">
+      <div class="ct">Vendor Spend — Project Total <div class="ctl"></div></div>
+      ${vendorBars}
+      <div class="dv"></div>
+      <div class="fb"><span style="color:var(--mu)">Total Materials Spend</span><span class="mono" style="font-weight:700;font-size:16px">${fd(totalMat)}</span></div>
+    </div>
+    ${invData.length?`<div class="card">
+      <div class="ct">Vendor Spend by Invoice <div class="ctl"></div></div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:4px">How much was spent at each vendor per invoice, with project rollup.</div>
+      ${crossTab}
+    </div>`:''}`;
+  })()}
   </div>`;
 }
 
