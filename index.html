@@ -149,7 +149,7 @@
   <div class="hdr-sep">|</div><div class="hdr-sub" onclick="setSection('pdf')" style="cursor:pointer;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">&#128196; PDF Tools</div>
   <div class="hdr-r"><span id="si" style="font-size:11px;color:rgba(255,255,255,.4);min-width:80px;text-align:right;margin-right:4px"></span>
     <span style="font-size:12px;color:rgba(255,255,255,.3)" id="hc">0 estimates</span>
-    <button class="btn bh sm np" onclick="doRefresh()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)" title="Refresh estimates">↻</button><button class="btn bh sm np" onclick="openS()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)">⚙ Settings</button>
+    <button class="btn bh sm np" onclick="doRefresh()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)" title="Refresh estimates">↻</button><button class="btn bh sm np" onclick="openS()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)">⚙ Settings</button><button class="btn bh sm np" onclick="doLogout()" style="color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)" title="Sign out">Sign out</button>
   </div>
 </div>
 <div class="ov" id="sOv">
@@ -242,6 +242,22 @@ function cEst(e){let c=e.md==='fr'?cFR(e):e.jt==='ri'?cRI(e):e.jt==='re'?cRE(e):
 const SURL='https://uyomunqueyjohlrgvhvx.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5b211bnF1ZXlqb2hscmd2aHZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDU5MDEsImV4cCI6MjA5NDc4MTkwMX0.YLm57KZm63oyZsDr47hMAm_ATwA3D3R20RdOX50QF7M';
 const SH={'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
+/* ===== AUTH (single shared login) ===== */
+let AUTH={token:null,rt:null,exp:0};
+function loadAuth(){try{const a=JSON.parse(localStorage.getItem('ay6-auth')||'null');if(a&&a.rt)AUTH=a;}catch(e){}}
+function saveAuth(){try{localStorage.setItem('ay6-auth',JSON.stringify(AUTH));}catch(e){}}
+function applyAuth(){SH.Authorization='Bearer '+(AUTH.token||SKEY);}
+function clearAuth(){AUTH={token:null,rt:null,exp:0};try{localStorage.removeItem('ay6-auth');}catch(e){}applyAuth();}
+function setTokens(j){AUTH={token:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)*1000)};saveAuth();applyAuth();}
+async function authPost(qs,body){const r=await fetch(SURL+'/auth/v1/token?'+qs,{method:'POST',headers:{'apikey':SKEY,'Content-Type':'application/json'},body:JSON.stringify(body)});let j={};try{j=await r.json();}catch(e){}if(!r.ok)throw new Error(j.error_description||j.msg||j.error||'Sign in failed');return j;}
+async function refreshAuth(){if(!AUTH.rt)throw new Error('no session');const j=await authPost('grant_type=refresh_token',{refresh_token:AUTH.rt});setTokens(j);}
+let rfTmr=null;
+function scheduleRefresh(){clearTimeout(rfTmr);const ms=Math.max(60000,(AUTH.exp-Date.now())-120000);rfTmr=setTimeout(function(){refreshAuth().then(scheduleRefresh).catch(doLogout);},ms);}
+async function doLoginSubmit(){const em=(document.getElementById('lg-em').value||'').trim(),pw=document.getElementById('lg-pw').value||'',er=document.getElementById('lg-err'),bt=document.getElementById('lg-btn');if(!em||!pw){er.textContent='Enter email and password';return;}er.textContent='';bt.disabled=true;bt.textContent='Signing in…';try{const j=await authPost('grant_type=password',{email:em,password:pw});setTokens(j);const ov=document.getElementById('lg-ov');if(ov)ov.remove();scheduleRefresh();ldData();}catch(e){bt.disabled=false;bt.textContent='Sign in';er.textContent=e.message;}}
+function doLogout(){clearTimeout(rfTmr);clearAuth();ests=[];loaded=false;showLogin();}
+function showLogin(msg){if(document.getElementById('lg-ov'))return;const ov=document.createElement('div');ov.id='lg-ov';ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#1B2A4A;display:flex;align-items:center;justify-content:center;font-family:inherit';ov.innerHTML='<div style="background:#fff;border-radius:12px;padding:32px;width:340px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,.35)"><div style="font-weight:700;font-size:20px;color:#1B2A4A;margin-bottom:4px">Ayala&#39;s Estimator</div><div style="font-size:13px;color:#6B7280;margin-bottom:20px">Sign in to continue</div><input id="lg-em" type="email" placeholder="Email" autocomplete="username" style="width:100%;padding:10px;border:1px solid #DDE1EB;border-radius:8px;margin-bottom:10px;font-size:14px;box-sizing:border-box"><input id="lg-pw" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px;border:1px solid #DDE1EB;border-radius:8px;margin-bottom:14px;font-size:14px;box-sizing:border-box"><button id="lg-btn" style="width:100%;padding:11px;background:#1B2A4A;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer">Sign in</button><div id="lg-err" style="color:#DC2626;font-size:12px;margin-top:10px;min-height:16px">'+(msg||'')+'</div></div>';document.body.appendChild(ov);document.getElementById('lg-btn').addEventListener('click',doLoginSubmit);document.getElementById('lg-pw').addEventListener('keydown',function(e){if(e.key==='Enter')doLoginSubmit();});document.getElementById('lg-em').focus();}
+async function boot(){loadAuth();applyAuth();if(AUTH.rt){try{await refreshAuth();scheduleRefresh();ldData();return;}catch(e){clearAuth();}}showLogin();}
+
 let ests=[],view='home',curId=null,ctab='cl',loaded=false,svTmr=null;
 let logoD=null,appS={we:'10 years',wi:'5 years',wc:'5 years',checkAddr:'',zelle:'',achInfo:''};
 const getCur=()=>ests.find(e=>e.id===curId);
@@ -1839,7 +1855,7 @@ function runTMImport(){
 }
 
 async function doRefresh(){const si=document.getElementById('si');if(si)si.textContent='\u21ba refreshing\u2026';try{const res=await fetch(SURL+'/rest/v1/estimates?select=data&order=updated_at.desc',{headers:SH});if(!res.ok)throw new Error();const rows=await res.json();if(Array.isArray(rows))ests=rows.map(r=>r.data).filter(Boolean);render();if(si)si.textContent='';}catch(e){if(si){si.textContent='\u26a0 offline';setTimeout(()=>{if(si)si.textContent='';},2000);}}}
-ldData();
+boot();
 </script>
 
 <div id="imp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;overflow-y:auto;padding:20px">
